@@ -1,0 +1,233 @@
+.login-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: auto;
+  z-index: 1;
+}
+
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 0;
+}
+
+.login-card {
+  background: rgba(45, 55, 72, 0.85);
+  padding: 3rem 2.5rem;
+  border-radius: 1rem;
+  width: 420px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+}
+
+.login-card h2 {
+  margin-bottom: 0.5rem;
+  color: white;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.login-question {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.login-form input {
+  padding: 1rem 1.2rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  transition: all 0.3s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.login-form input::placeholder {
+  color: #666;
+}
+
+.login-form input:focus {
+  outline: none;
+  background: white;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+.sign-in-button {
+  background-color: #ff8a65;
+  color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+}
+
+.sign-in-button:hover {
+  background-color: #ff7043;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 138, 101, 0.4);
+}
+
+.sign-in-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.message {
+  margin-top: 0.5rem;
+  color: #ffcdd2;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.remember-me input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #ff8a65;
+}
+
+.forgot-password {
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.forgot-password:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.divider {
+  margin: 1.5rem 0;
+  position: relative;
+  text-align: center;
+}
+
+.divider span {
+  color: white;
+  font-size: 0.85rem;
+  position: relative;
+  padding: 0 1rem;
+  background: rgba(45, 55, 72, 0.85);
+}
+
+.social-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.social-button {
+  flex: 1;
+  padding: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: white;
+  color: #333;
+  font-weight: 500;
+}
+
+.social-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.social-button.facebook:hover {
+  background: #1877f2;
+  color: white;
+}
+
+.social-button.twitter:hover {
+  background: #1da1f2;
+  color: white;
+}
+
+.register-link {
+  margin-top: 1.5rem;
+}
+
+.register-link a {
+  color: white;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.register-link a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
