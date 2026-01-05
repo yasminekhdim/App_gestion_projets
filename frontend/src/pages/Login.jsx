@@ -4,6 +4,29 @@ import { useNavigate } from "react-router-dom";
 import "./Login.css";
 import backgroundImage from "../assets/image.png";
 
+// --- Firebase imports ---
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+
+// ✅ Configuration Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAtkjU2ZY6zYHloGU_fWYqRbBdXJxqIAT0",
+  authDomain: "gestionprojet-b48a9.firebaseapp.com",
+  projectId: "gestionprojet-b48a9",
+  storageBucket: "gestionprojet-b48a9.firebasestorage.app",
+  messagingSenderId: "1062444978253",
+  appId: "1:1062444978253:web:b882d67a1c745a0c648c04",
+};
+
+// Initialisation Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,6 +141,56 @@ export default function Login() {
     }
   };
 
+  // 🚀 GOOGLE LOGIN (version popup → fonctionne toujours)
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const idToken = await user.getIdToken();
+
+      const response = await fetch("http://localhost:5000/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: idToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return setMessage("❌ " + (data.message || "Erreur inconnue"));
+      }
+      console.log(data);
+
+       // Utilise saveAuth au lieu de localStorage.setItem directement
+        saveAuth(data.token, data.user, true);
+      
+      if (data.user.status === "incomplete") {
+          navigate("/complete-profile");
+        return;
+      }
+
+      else if (data.user.status === "pending") {
+          navigate("/profilePending");
+        return;
+      }
+
+      if(data.user.status==="approved"){
+        if (data.user.role === "administrateur") navigate("/admin/home");
+        else if (data.user.role === "enseignant") navigate("/enseignant/home");
+        else {
+        console.log("hola etudiant");
+        navigate("/etudiant/home");}
+      }
+       
+
+    } catch (error) {
+      console.error("Erreur Google :", error);
+      setMessage("❌ Authentification Google échouée");
+    }
+  };
+
+
   return (
     <div className="login-container" style={{ backgroundImage: `url(${backgroundImage})` }}>
       <div className="login-card">
@@ -157,6 +230,11 @@ export default function Login() {
               : "SE CONNECTER"}
           </button>
 
+          {/* GOOGLE */}
+          <button type="button" className="google-button" onClick={handleGoogleLogin}>
+            🔵 Continuer avec Google
+          </button>
+
           {message && <p className="message">{message}</p>}
 
           <div className="options-row">
@@ -168,8 +246,9 @@ export default function Login() {
               />
               <span>Se souvenir de moi</span>
             </label>
-            <a href="/resetPass" className="forgot-password">Mot de passe oublié ?</a>
-          </div>
+<a href="/forgetPass" className="forgot-password">
+              Mot de passe oublié ?
+            </a>          </div>
 
           <div className="register-link">
             <a href="/register">Vous n'avez pas de compte ? Créez-en un</a>

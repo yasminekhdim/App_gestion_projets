@@ -1,0 +1,208 @@
+/* ============================
+   CompleteProfile - Full screen
+   ============================ */
+
+/* Full-screen background container (like your login-container) */
+.complete-bg {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: auto;
+  z-index: 9999;
+}
+
+/* Optional overlay (darken background to make card stand out) */
+.complete-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.35); /* adjust opacity if needed */
+  z-index: 0;
+}
+
+/* Container inside the background - keeps stacking context and layout */
+.complete-profile-container {
+  position: relative;
+  z-index: 1;          /* above the overlay */
+  width: 100%;
+  max-width: 1200px;   /* page can grow to a comfortable max on large screens */
+  padding: 2rem;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Card (centered) */
+.form-card {
+  background: rgba(25, 31, 45, 0.85);
+  padding: 2.6rem 2.2rem;
+  border-radius: 1rem;
+  width: 420px;           /* desired card width on desktop */
+  max-width: 95vw;        /* responsive on small screens */
+  text-align: left;
+  position: relative;
+  z-index: 2;
+  backdrop-filter: blur(10px);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+}
+
+/* If you want a wider card on large displays, change width via media query below */
+
+/* Title */
+.title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+/* Animations */
+.animated-card {
+  animation: fadeIn 0.5s ease-out both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Role selection */
+.role-options {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.role-option {
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+  color: #fff;
+  user-select: none;
+}
+
+.role-option input[type="radio"] {
+  transform: scale(1.15);
+  cursor: pointer;
+}
+
+/* Inputs (files, text, date) */
+input[type="text"],
+input[type="date"],
+input[type="file"],
+select,
+textarea {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: none;
+  background: rgba(255,255,255,0.95);
+  color: #222;
+  width: 100%;
+  margin-bottom: 0.9rem;
+  box-sizing: border-box;
+  font-size: 0.98rem;
+}
+
+/* File input - give a small visual spacing */
+input[type="file"] {
+  padding: 0.5rem 1rem;
+}
+
+/* Focus style */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 12px 3px rgba(255,138,101,0.12);
+  background: #fff;
+}
+
+/* Submit button */
+.submit-btn {
+  background: linear-gradient(135deg, #ff8a65, #ff7043);
+  padding: 0.95rem 1rem;
+  border: none;
+  border-radius: 12px;
+  width: 100%;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  margin-top: 0.25rem;
+}
+
+.submit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px rgba(255, 110, 70, 0.25);
+}
+
+/* Message */
+.message {
+  margin-top: .6rem;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.message.error { color: #ff6b6b; }
+.message.success { color: #98e9a3; }
+
+/* Small helpers */
+label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+  color: #e6eef8;
+  font-size: 0.95rem;
+}
+
+/* Responsive tweaks */
+@media (min-width: 900px) {
+  /* make card a bit wider on larger screens */
+  .form-card { width: 520px; }
+}
+
+@media (max-width: 520px) {
+  /* improved spacing for very small screens */
+  .form-card {
+    padding: 1.6rem;
+    border-radius: 0.9rem;
+  }
+
+  .title { font-size: 1.4rem; }
+}
+
+/* Accessibility: ensure focus outlines are visible for keyboard users */
+input:focus, button:focus, select:focus, textarea:focus {
+  outline-offset: 2px;
+}
+
+

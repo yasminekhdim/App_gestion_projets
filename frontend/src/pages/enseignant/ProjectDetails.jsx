@@ -35,7 +35,26 @@ export default function ProjectDetails() {
     setViewerFile(att);
 
     try {
-      // Fetch via server proxy to avoid CORS / 401 issues
+      // Try to access the stored URL directly first
+      if (att.fichier_url) {
+        // For images, we can try to display them directly
+        if (att.file_type && att.file_type.startsWith('image/')) {
+          setViewerBlobUrl(att.fichier_url);
+          setViewerLoading(false);
+          return;
+        }
+        // For other files, try to fetch as blob for preview
+        const res = await fetch(att.fichier_url);
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          setViewerBlobUrl(url);
+          setViewerLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: Fetch via server proxy to avoid CORS / 401 issues
       const token = getToken();
       const res = await fetch(`http://localhost:5000/api/attachments/id/${att.id}/stream`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -79,6 +98,13 @@ export default function ProjectDetails() {
 
   const handleOpenInNewTab = async (att) => {
     try {
+      // Try to use stored URL directly first
+      if (att.fichier_url) {
+        window.open(att.fichier_url, '_blank', 'noopener');
+        return;
+      }
+
+      // Fallback: use signed URL from server
       const url = await getSignedUrl(att.id);
       window.open(url, '_blank', 'noopener');
     } catch (err) {
@@ -89,8 +115,21 @@ export default function ProjectDetails() {
 
   const handleDownload = async (att) => {
     try {
+      // Try to use stored URL directly first
+      if (att.fichier_url) {
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = att.fichier_url;
+        link.download = att.fichier_name || 'download';
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // Fallback: use signed URL from server
       const url = await getSignedUrl(att.id);
-      // Open in new tab so user can download (Cloudinary URL should allow download)
       window.open(url, '_blank', 'noopener');
     } catch (err) {
       console.error('Erreur téléchargement:', err);

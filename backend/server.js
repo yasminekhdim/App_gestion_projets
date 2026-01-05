@@ -9,6 +9,7 @@ import teacherRoutes from "./routes/teacherRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import attachmentRoutes from "./routes/attachmentRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 
 dotenv.config();
@@ -16,6 +17,7 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // For FormData parsing
 
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
@@ -24,6 +26,7 @@ app.use("/api/teachers", teacherRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api", taskRoutes);
 app.use("/api/attachments", attachmentRoutes);
+app.use("/api/admin", adminRoutes);
 
 
 

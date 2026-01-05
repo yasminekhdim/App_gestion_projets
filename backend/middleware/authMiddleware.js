@@ -35,3 +35,22 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
+export const requireAdmin = (req, res, next) => {
+  // verifyToken must be called before this middleware
+  if (!req.userId || !req.userRole) {
+    return res.status(401).json({ message: "Token manquant ou invalide" });
+  }
+
+  if (req.userRole !== "administrateur") {
+    return res.status(403).json({ message: "Accès refusé : admin uniquement" });
+  }
+
+  // Also set req.user for compatibility with adminController
+  req.user = {
+    id: req.userId,
+    email: req.userEmail,
+    role: req.userRole
+  };
+
+  next();
+};

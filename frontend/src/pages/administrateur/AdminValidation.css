@@ -1,0 +1,13 @@
+.card {
+  border-radius: 12px;
+}
+
+.table thead th {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #6c757d;
+}
+
+.modal-content {
+  border-radius: 12px;
+}

@@ -1,15 +1,23 @@
 import { BrowserRouter, Routes, Route , Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Home from './pages/administrateur/Home'
 import Homensg from './pages/enseignant/Homensg'
 import Students from './pages/enseignant/Students'
 import CreateProject from './pages/enseignant/CreateProject'
+import ResetPassword from './pages/ResetPassword'
+import ForgotPassword from './pages/ForgotPassword'
+import ProfilePending from './pages/profilePending'
+import CompleteProfile from './pages/complete-profile'
 import ProjectsList from './pages/enseignant/ProjectsList'
 import ProjectDetails from './pages/enseignant/ProjectDetails'
 import Hometud from './pages/etudiant/Hometud'
 import Profile from './pages/Profile'
 import ProtectedRoute from "./composants/ProtectedRoute";
+import AdminValidation from './pages/administrateur/AdminValidation'
+import Dashboard from './pages/administrateur/Dashboard'
+import AdminLayout from './pages/administrateur/AdminLayout'
+import AdminUsers from "./pages/administrateur/AdminUsers";
+import AdminProfile from './pages/administrateur/AdminProfile'
 import './App.css'
 
 
@@ -21,13 +29,21 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/admin/home"
-          element={
-            <ProtectedRoute allowedRoles={["administrateur"]}>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
+         <Route path="/forgetPass" element={<ForgotPassword />} />
+        <Route path="/resetPassword/:token" element={<ResetPassword />} />
+        <Route path="/complete-profile" element={<CompleteProfile />} />
+        <Route path="/profilePending" element={<ProfilePending />} />
+        <Route path="/admin" element={
+        <ProtectedRoute allowedRoles={["administrateur"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Dashboard />} />           {/* /admin */}
+          <Route path="validation" element={<AdminValidation />} /> {/* /admin/validation */}
+          <Route path="users" element={<AdminUsers />} /> 
+          <Route path="profile" element={<AdminProfile />} />
+          {/* Add other admin subpages here */}
+        </Route>
         <Route
           path="/enseignant/home"
           element={

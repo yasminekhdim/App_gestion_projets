@@ -8,11 +8,13 @@ export default function Register() {
     prenom: "",
     email: "",
     password: "",
+    confirmPassword: "",
     dateNaissance: "",
     cin: "",
     role: "etudiant",
     departement: "",
     classe: "",
+    proofOfId: null
   });
   const [proofOfId, setProofOfId] = useState(null);
   const [classes, setClasses] = useState([]);
@@ -82,6 +84,68 @@ export default function Register() {
     return seventeenth <= now;
   };
 
+  // Validation basique côté client
+  const validate = () => {
+    const {
+      nom,
+      prenom,
+      cin,
+      email,
+      date_naiss,
+      password,
+      confirmPassword,
+      role,
+      departement,
+      classe,
+      proofOfId
+    } = formData;
+
+    if (
+      !nom ||
+      !prenom ||
+      !cin ||
+      !email ||
+      !date_naiss ||
+      !password ||
+      !confirmPassword ||
+      !role ||
+      !departement
+    ) {
+      setMessage("Veuillez remplir tous les champs obligatoires.");
+      return false;
+    }
+
+    // Vérifier format email simple
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setMessage("Email invalide.");
+      return false;
+    }
+
+    // Mot de passe et confirmation
+    if (password !== confirmPassword) {
+      setMessage("Les mots de passe ne correspondent pas.");
+      return false;
+    }
+
+    // Rôle spécifique validations
+    if (role === "etudiant") {
+      if (!proofOfId || !classe) {
+        setMessage("Veuillez remplir tous les champs obligatoires pour l'étudiant.");
+        return false;
+      }
+    } else if (role === "enseignant") {
+      if (!proofOfId) {
+        setMessage("Veuillez remplir tous les champs obligatoires pour l'enseignant.");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -257,6 +321,18 @@ export default function Register() {
               {showPassword ? "👁️" : "👁️‍🗨️"}
             </span>
           </div>
+           <div className="field-group">
+              <label htmlFor="confirmPassword">Confirmer mot de passe</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="confirmPassword"
+                name="confirmPassword"
+                placeholder="Confirmer mot de passe"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
           <div className="file-field">
             <label className="file-label">

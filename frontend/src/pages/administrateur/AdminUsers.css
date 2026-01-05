@@ -1,0 +1,8 @@
+.table td,
+.table th {
+  vertical-align: middle;
+}
+
+.modal-content {
+  border-radius: 12px;
+}

@@ -1,10 +1,11 @@
 import express from "express";
 import multer from "multer";
-import { register, login } from "../controllers/authController.js";
+import { register, login, resetPassword, forgotPassword, googleAuth, completeProfile } from "../controllers/authController.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Configuration de multer pour gérer les fichiers en mémoire
+// Configuration de multer pour gérer les fichiers en mémoire (Cloudinary)
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
@@ -48,5 +49,24 @@ router.post("/register", (req, res, next) => {
 
 // Route pour se connecter
 router.post("/login", login);
+
+// Route pour forgot password
+
+router.post("/forgotPassword", forgotPassword);
+
+// Route pour reset password 
+router.post("/resetPassword/:token", resetPassword);
+
+router.post("/google", googleAuth);
+
+router.post(
+  "/complete-profile",
+  verifyToken,
+  upload.fields([
+    { name: "verification_document", maxCount: 1 },
+    { name: "attestation", maxCount: 1 }
+  ]),
+  completeProfile
+);
 
 export default router;

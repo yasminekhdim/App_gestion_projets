@@ -1,0 +1,55 @@
+.admin-profile {
+  max-width: 900px;
+}
+
+.card-header {
+  font-size: 1rem;
+}
+
+/* ================= TITRES DES SECTIONS ================= */
+.admin-profile h3 {
+  color: #0d6efd;
+}
+
+/* ================= CARD HEADERS ================= */
+.admin-profile .card-header {
+  font-size: 1rem;
+  color: #212529;
+  background-color: #f8f9fa;
+}
+
+/* ================= LABELS DES CHAMPS ================= */
+.admin-profile .form-label {
+  color: #212529 !important; /* noir lisible */
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* ================= INPUTS ================= */
+.admin-profile .form-control {
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* ================= SECURITY TITLE ================= */
+.admin-profile .card-header.text-danger {
+  color: #dc3545 !important;
+}
+
+/* ================= BUTTONS ================= */
+.admin-profile button {
+  border-radius: 8px;
+}
+
+/* ================= MOBILE SPACING ================= */
+@media (max-width: 768px) {
+  .admin-profile .row > div {
+    margin-bottom: 12px;
+  }
+}
+
+.admin-profile .form-label {
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
