@@ -1,10 +1,13 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { getUser, clearAuth } from "../auth";
+import "./AdminNavbar.css";
 import logo from "../../assets/logo.png";
 
 export default function AdminNavbar() {
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem("user"));
+  const navigate = useNavigate();
+  const user = getUser();
   const [imgError, setImgError] = useState(false);
 
   const navItems = [
@@ -14,8 +17,8 @@ export default function AdminNavbar() {
   ];
 
   const logout = () => {
-    localStorage.clear();
-    window.location.href = "/login";
+    clearAuth();
+    navigate("/login");
   };
 
   return (
@@ -27,12 +30,15 @@ export default function AdminNavbar() {
           to="/admin"
           className="navbar-brand d-flex align-items-center gap-2"
         >
-          <img
-            src={logo}
-            alt="ProjectHub logo"
-            height="38"
-            className="rounded p-1 bg-white border border-primary"
-          />
+          {logo && (
+            <img
+              src={logo}
+              alt="ProjectHub logo"
+              height="38"
+              className="rounded p-1 bg-white border border-primary"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+          )}
           <span className="fw-bold fs-5 text-primary">
             ProjectHub
           </span>
@@ -68,7 +74,7 @@ export default function AdminNavbar() {
           <Link to="/admin/profile">
           {!imgError ? (
             <img
-              src={user?.image || "/profile.png"}
+              src={user?.profilePic_url || "/profile.png"}
               alt="profile"
               width="40"
               height="40"

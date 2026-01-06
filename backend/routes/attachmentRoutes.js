@@ -342,6 +342,11 @@ router.get('/id/:attachment_id/download', async (req, res) => {
   }
 });
 
+// Route pour supprimer une pièce jointe
+router.delete('/:attachment_id', deleteAttachment);
+
+// Route pour récupérer les pièces jointes d'une entité (projet ou tache)
+router.get('/entity/:entity_type/:entity_id', getAttachments);
 
 export default router;
 

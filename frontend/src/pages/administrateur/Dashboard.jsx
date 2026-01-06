@@ -52,7 +52,7 @@ export default function Dashboard() {
   const recentUsersData = stats.recentUsers || [];
 
   return (
-    <div className="container-fluid px-4 py-4 dashboard">
+    <div className="dashboard">
       {/* HEADER */}
       <div className="mb-4 text-center">
         <h3 className="fw-bold">Dashboard Administrateur</h3>

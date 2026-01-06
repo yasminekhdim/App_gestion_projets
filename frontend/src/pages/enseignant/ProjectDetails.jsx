@@ -28,6 +28,13 @@ export default function ProjectDetails() {
   const [viewerLoading, setViewerLoading] = useState(false);
   const [viewerError, setViewerError] = useState("");
 
+  // Task details modal state
+  const [showTaskDetailsModal, setShowTaskDetailsModal] = useState(false);
+  const [detailTask, setDetailTask] = useState(null);
+  const [detailTaskAttachments, setDetailTaskAttachments] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+
   const openAttachmentViewer = async (att) => {
     setViewerError("");
     setViewerOpen(true);
@@ -188,7 +195,7 @@ export default function ProjectDetails() {
 
       if (response.status === 401) {
         navigate("/login");
-        return;
+        return null;
       }
 
       const data = await response.json();
@@ -197,12 +204,15 @@ export default function ProjectDetails() {
         setTasks(data.tasks || []);
         setStudents(data.students || []);
         setProjectAttachments(data.project?.attachments || []);
+        return { project: data.project, tasks: data.tasks || [], students: data.students || [] };
       } else {
         setError(data.message || "Erreur lors du chargement des détails");
+        return null;
       }
     } catch (err) {
       console.error("Erreur :", err);
       setError("Erreur réseau lors du chargement des détails");
+      return null;
     } finally {
       setLoading(false);
     }
@@ -236,6 +246,43 @@ export default function ProjectDetails() {
     setTaskError("");
     setTaskMessage("");
     setShowTaskModal(true);
+  };
+
+  // Open task details modal (read-only) and fetch attachments
+  const openTaskDetails = async (task) => {
+    setDetailTask(task);
+    setShowTaskDetailsModal(true);
+    setDetailError("");
+    setDetailLoading(true);
+
+    try {
+      const token = getToken();
+      const res = await fetch(`http://localhost:5000/api/attachments/entity/tache/${task.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setDetailTaskAttachments(data.attachments || task.attachments || []);
+      } else {
+        // fallback to attachments already present on task
+        setDetailTaskAttachments(task.attachments || []);
+      }
+    } catch (err) {
+      console.error('Erreur fetch attachments pour la tâche:', err);
+      setDetailTaskAttachments(task.attachments || []);
+      setDetailError("Impossible de charger les pièces jointes supplémentaires.");
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeTaskDetails = () => {
+    setShowTaskDetailsModal(false);
+    setDetailTask(null);
+    setDetailTaskAttachments([]);
+    setDetailError("");
+    setDetailLoading(false);
   };
 
   const handleCloseTaskModal = () => {
@@ -319,7 +366,8 @@ export default function ProjectDetails() {
           libelle: taskFormData.libelle,
           description: taskFormData.description,
           deadline: taskFormData.deadline,
-          etudiant_id: taskFormData.etudiant_id || undefined,
+          // Always include the property so backend can distinguish "clear assignment" (empty string) vs omitted
+          etudiant_id: taskFormData.etudiant_id,
         }),
       });
 
@@ -354,10 +402,21 @@ export default function ProjectDetails() {
           }
         }
 
+        // Refresh project data immediately so UI reflects the change
+        const fetched = await fetchProjectDetails();
+
+        // If the details modal is open for the same task, refresh it with updated task
+        if (detailTask && taskId && fetched && Array.isArray(fetched.tasks)) {
+          const updatedTask = fetched.tasks.find((t) => t.id === taskId);
+          if (updatedTask) {
+            // If the modal is open, re-open to refresh attachments and fields
+            openTaskDetails(updatedTask);
+          }
+        }
+
         setTaskMessage(editingTask ? "✅ Tâche modifiée avec succès !" : "✅ Tâche créée avec succès !");
         setTimeout(() => {
           handleCloseTaskModal();
-          fetchProjectDetails();
         }, 1500);
       } else {
         setTaskError(data.message || "Erreur lors de la création/modification de la tâche");
@@ -460,7 +519,7 @@ export default function ProjectDetails() {
 
   const handleDeleteAttachment = async (attachmentId) => {
     if (!window.confirm("Supprimer cette pièce jointe ?")) return;
-    
+
     try {
       const token = getToken();
       const response = await fetch(`http://localhost:5000/api/attachments/${attachmentId}`, {
@@ -470,8 +529,21 @@ export default function ProjectDetails() {
 
       if (response.ok) {
         fetchProjectDetails();
+        // If task details modal is open, refresh its attachments
+        if (detailTask) {
+          openTaskDetails(detailTask);
+        }
       } else {
-        setError("Erreur lors de la suppression de la pièce jointe");
+        // Try to parse server message for better feedback
+        let serverMsg = "Erreur lors de la suppression de la pièce jointe";
+        try {
+          const data = await response.json();
+          serverMsg = data.message || serverMsg;
+        } catch (parseErr) {
+          console.warn('Non-JSON response when deleting attachment', parseErr);
+        }
+        console.error(`Delete attachment failed: ${response.status} - ${serverMsg}`);
+        setError(serverMsg);
       }
     } catch (err) {
       console.error(err);
@@ -872,18 +944,18 @@ export default function ProjectDetails() {
                 const isPassed = isDeadlinePassed(task.deadline);
 
                 return (
-                  <div key={task.id} className="task-card">
+                  <div key={task.id} className="task-card" onClick={() => openTaskDetails(task)}>
                     <div className="task-header">
                       <h3>{task.libelle}</h3>
                       <div className="task-actions">
                         <button
-                          onClick={() => handleOpenTaskModal(task)}
+                          onClick={(e) => { e.stopPropagation(); handleOpenTaskModal(task); }}
                           className="edit-btn"
                         >
                           Modifier
                         </button>
                         <button
-                          onClick={() => handleDeleteTask(task.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}
                           className="delete-btn"
                         >
                           Supprimer
@@ -947,6 +1019,7 @@ export default function ProjectDetails() {
                         </div>
                       )}
 
+                      {/* Make sure task card itself is clickable; actions above use stopPropagation */}
                       <div className="task-info-row">
                         <span className="task-label">Créée le:</span>
                         <span className="task-value">{formatDateTime(task.created_at)}</span>
@@ -1185,6 +1258,100 @@ export default function ProjectDetails() {
                   </div>
                 )
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Task details modal */}
+      {showTaskDetailsModal && detailTask && (
+        <div className="modal-overlay" onClick={closeTaskDetails}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Détails de la tâche</h2>
+              <button onClick={closeTaskDetails} className="modal-close-btn">×</button>
+            </div>
+
+            {detailLoading && <div className="viewer-loading">Chargement...</div>}
+            {detailError && <div className="error-message">{detailError}</div>}
+
+            <div className="task-detail-body">
+              <h3>{detailTask.libelle}</h3>
+              {detailTask.description && <p className="task-description">{detailTask.description}</p>}
+
+              <div className="task-info-row">
+                <span className="task-label">Date limite:</span>
+                <span className="task-value">{formatDate(detailTask.deadline)}</span>
+              </div>
+
+              <div className="task-info-row">
+                <span className="task-label">Assignée à:</span>
+                <span className="task-value">{detailTask.etudiant_id ? `${detailTask.etudiant_prenom} ${detailTask.etudiant_nom}` : 'Tous les membres du projet'}</span>
+              </div>
+
+              <div className="attachments-section">
+                <h4>Fichiers liés</h4>
+                {detailTaskAttachments.length === 0 ? (
+                  <p className="text-muted">Aucun fichier associé à cette tâche.</p>
+                ) : (
+                  <div className="attachments-list">
+                    {detailTaskAttachments.map((att) => (
+                      <div key={att.id} className="attachment-item">
+                        <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(att); }} className="document-link attachment-open-btn">
+                          {att.file_type?.startsWith('image/') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'} {att.fichier_name}
+                        </button>
+                        <div className="attachment-actions">
+                          <button onClick={(e) => { e.stopPropagation(); handleDownload(att); }} className="download-btn">⬇️</button>
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id); }} className="remove-attachment-btn">×</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="students-submissions">
+                <h4>Livrables des étudiants</h4>
+                <p className="text-muted">(Montre les fichiers associés à la tâche — si les étudiants ont téléversé des rendus, ils apparaîtront ici)</p>
+                <div className="students-list">
+                  {students.length === 0 ? <p>Aucun étudiant assigné.</p> : (
+                    (() => {
+                      const studentsToShow = detailTask?.etudiant_id
+                        ? students.filter((s) => s.id === detailTask.etudiant_id)
+                        : students;
+
+                      if (studentsToShow.length === 0 && detailTask?.etudiant_id) {
+                        return <p className="text-muted">Étudiant assigné (ID: {detailTask.etudiant_id}) — détails non disponibles.</p>;
+                      }
+
+                      return studentsToShow.map((s) => {
+                        // Simple heuristic: check filenames for student email or name
+                        const matches = detailTaskAttachments.filter(a => {
+                          const lower = (a.fichier_name || '').toLowerCase();
+                          return (s.email && lower.includes(s.email.toLowerCase())) || (s.nom && lower.includes(s.nom.toLowerCase())) || (s.prenom && lower.includes(s.prenom.toLowerCase()));
+                        });
+                        return (
+                          <div key={s.id} className="student-submission-item">
+                            <strong>{s.prenom} {s.nom}</strong>
+                            {matches.length === 0 ? <span className="text-muted"> — Aucun rendu trouvé</span> : (
+                              <div className="student-attachments">
+                                {matches.map(m => (
+                                  <div key={m.id} className="attachment-item small">
+                                    <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(m); }} className="document-link attachment-open-btn">
+                                      {m.file_type?.startsWith('image/') ? '🖼️' : m.file_type?.includes('pdf') ? '📄' : '📎'} {m.fichier_name}
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleDownload(m); }} className="download-btn">⬇️</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

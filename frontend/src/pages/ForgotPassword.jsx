@@ -1,5 +1,4 @@
 import { useState } from "react";
-import './authForms.css'
 import backgroundImage from "../assets/image.png";
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");

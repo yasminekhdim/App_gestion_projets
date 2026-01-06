@@ -1,6 +1,17 @@
 import db from "../config/db.js";
 import { deleteFile } from "../utils/cloudinaryUpload.js";
 
+// Helper: normalize etudiant_id coming from JSON or FormData
+const normalizeStudentId = (val) => {
+  if (val === undefined || val === null) return null;
+  if (typeof val === "string") {
+    const t = val.trim();
+    if (t === "") return null;
+    return isNaN(Number(t)) ? t : Number(t);
+  }
+  return val;
+};
+
 // Récupérer les détails d'un projet avec ses tâches
 export const getProjectDetails = async (req, res) => {
   try {
@@ -189,7 +200,7 @@ export const createTask = async (req, res) => {
     const libelle = req.body.libelle;
     const description = req.body.description || null;
     const deadline = req.body.deadline;
-    const etudiant_id = req.body.etudiant_id && req.body.etudiant_id.trim() !== "" ? req.body.etudiant_id : null;
+    const etudiant_id = normalizeStudentId(req.body.etudiant_id);
 
     // Vérifier que l'utilisateur est un enseignant
     const [users] = await db.query("SELECT role FROM users WHERE id = ?", [teacherId]);
@@ -230,8 +241,8 @@ export const createTask = async (req, res) => {
       return res.status(400).json({ message: "La date limite doit être dans le futur." });
     }
 
-    // Si un étudiant est assigné, vérifier qu'il est assigné au projet
-    if (etudiant_id) {
+    // Si un étudiant est assigné (valeur non nulle), vérifier qu'il est assigné au projet
+    if (etudiant_id !== null) {
       const [studentAssignments] = await db.query(
         "SELECT id FROM projet_etudiant WHERE projet_id = ? AND etudiant_id = ?",
         [project_id, etudiant_id]
@@ -306,7 +317,8 @@ export const updateTask = async (req, res) => {
     const libelle = req.body.libelle;
     const description = req.body.description || null;
     const deadline = req.body.deadline;
-    const etudiant_id = req.body.etudiant_id && req.body.etudiant_id.trim() !== "" ? req.body.etudiant_id : null;
+    const hasEtudiantProp = Object.prototype.hasOwnProperty.call(req.body, 'etudiant_id');
+    const etudiant_id = hasEtudiantProp ? normalizeStudentId(req.body.etudiant_id) : undefined;
 
     // Vérifier que l'utilisateur est un enseignant
     const [users] = await db.query("SELECT role FROM users WHERE id = ?", [teacherId]);
@@ -347,8 +359,8 @@ export const updateTask = async (req, res) => {
       }
     }
 
-    // Si un étudiant est assigné, vérifier qu'il est assigné au projet
-    if (etudiant_id) {
+    // Si l'étudiant est fourni (propriété présente) et non null, vérifier qu'il est assigné au projet
+    if (hasEtudiantProp && etudiant_id !== null) {
       const [studentAssignments] = await db.query(
         "SELECT id FROM projet_etudiant WHERE projet_id = ? AND etudiant_id = ?",
         [task.projet_id, etudiant_id]
@@ -375,9 +387,9 @@ export const updateTask = async (req, res) => {
       updates.push("deadline = ?");
       values.push(deadline);
     }
-    if (etudiant_id !== undefined) {
+    if (hasEtudiantProp) {
       updates.push("etudiant_id = ?");
-      values.push(etudiant_id && etudiant_id.trim() !== "" ? etudiant_id : null);
+      values.push(etudiant_id !== null ? etudiant_id : null);
     }
 
     if (updates.length === 0) {

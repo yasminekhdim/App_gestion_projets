@@ -128,12 +128,27 @@ export default function Login() {
       setFailedAttempts(0);
       localStorage.setItem("login_failed_attempts", "0");
 
-      saveAuth(token, user);
+      saveAuth(token, user, rememberMe);
 
-      // Redirection selon le rôle
-      if (user.role === "administrateur") navigate("/admin/home");
-      else if (user.role === "enseignant") navigate("/enseignant/home");
-      else navigate("/etudiant/home");
+      // Check status before redirecting
+      if (user.status === "incomplete") {
+        navigate("/complete-profile");
+        return;
+      }
+
+      if (user.status === "pending") {
+        navigate("/profilePending");
+        return;
+      }
+
+      // Redirection selon le rôle (only if approved)
+      if (user.status === "approved") {
+        if (user.role === "administrateur") navigate("/admin");
+        else if (user.role === "enseignant") navigate("/enseignant/home");
+        else navigate("/etudiant/home");
+      } else {
+        setMessage("Votre compte n'est pas encore approuvé. Veuillez patienter.");
+      }
 
     } catch (err) {
       console.error(err);
@@ -176,7 +191,7 @@ export default function Login() {
       }
 
       if(data.user.status==="approved"){
-        if (data.user.role === "administrateur") navigate("/admin/home");
+        if (data.user.role === "administrateur") navigate("/admin");
         else if (data.user.role === "enseignant") navigate("/enseignant/home");
         else {
         console.log("hola etudiant");
@@ -246,7 +261,7 @@ export default function Login() {
               />
               <span>Se souvenir de moi</span>
             </label>
-<a href="/forgetPass" className="forgot-password">
+<a href="/forgot-password" className="forgot-password">
               Mot de passe oublié ?
             </a>          </div>
 

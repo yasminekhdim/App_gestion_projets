@@ -17,6 +17,25 @@ export default function Profile() {
   const [selectedClassId, setSelectedClassId] = useState("");
   const [classMessage, setClassMessage] = useState("");
   const [classError, setClassError] = useState("");
+
+  // Édition du profil
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    nom: "",
+    prenom: "",
+    date_naissance: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Changer mot de passe
+  const [showChangePwd, setShowChangePwd] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwdSaving, setPwdSaving] = useState(false);
+  const [pwdError, setPwdError] = useState("");
+  const [pwdMessage, setPwdMessage] = useState("");
+
   const navigate = useNavigate();
 
   // Récupérer le profil au chargement
@@ -58,6 +77,12 @@ export default function Profile() {
         if (data.profilePic_url) {
           setPreview(data.profilePic_url);
         }
+        // Initialiser le formulaire d'édition
+        setFormData({
+          nom: data.nom || "",
+          prenom: data.prenom || "",
+          date_naissance: data.date_naissance ? new Date(data.date_naissance).toISOString().slice(0,10) : "",
+        });
       } else {
         setError(data.message || "Erreur lors du chargement du profil");
       }
@@ -142,6 +167,76 @@ export default function Profile() {
       setUploading(false);
     }
   };
+
+  // --- Édition du profil utilisateur ---
+  const handleEdit = () => {
+    setIsEditing(true);
+    setMessage("");
+    setError("");
+  };
+
+  const handleCancelEdit = () => {
+    // Réinitialiser le formulaire à partir du profil chargé
+    if (profile) {
+      setFormData({
+        nom: profile.nom || "",
+        prenom: profile.prenom || "",
+        date_naissance: profile.date_naissance ? new Date(profile.date_naissance).toISOString().slice(0,10) : "",
+      });
+    }
+    setIsEditing(false);
+    setMessage("");
+    setError("");
+  };
+
+  const handleInputChange = (key, value) => {
+    setFormData((s) => ({ ...s, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const token = getToken();
+      const payload = {
+        // n'envoyer que les champs modifiables
+        nom: formData.nom,
+        prenom: formData.prenom,
+        date_naissance: formData.date_naissance || null,
+      };
+
+      const response = await fetch("http://localhost:5000/api/users/profile", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setProfile(data);
+        setIsEditing(false);
+        setMessage("✅ Profil mis à jour avec succès !");
+
+        // Mettre à jour l'utilisateur stocké localement
+        const localUser = getUser();
+        if (localUser) {
+          saveAuth(token, { ...localUser, nom: data.nom, prenom: data.prenom, profilePic_url: data.profilePic_url || localUser.profilePic_url });
+        }
+      } else {
+        setError(data.message || "Erreur lors de la mise à jour du profil");
+      }
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour du profil :", err);
+      setError("Erreur réseau lors de la mise à jour du profil");
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const getRoleLabel = (role) => {
     const roles = {
@@ -346,6 +441,18 @@ export default function Profile() {
             ← Retour
           </button>
           <h1>Mon Profil</h1>
+          <div className="profile-actions">
+            {!isEditing ? (
+              <button onClick={handleEdit} className="edit-btn">Modifier</button>
+            ) : (
+              <>
+                <button onClick={handleSave} className="save-btn" disabled={saving}>
+                  {saving ? "Enregistrement..." : "Enregistrer"}
+                </button>
+                <button onClick={handleCancelEdit} className="cancel-btn">Annuler</button>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="profile-content">
@@ -414,11 +521,19 @@ export default function Profile() {
             <div className="info-grid">
               <div className="info-item">
                 <label>Nom</label>
-                <p>{profile.nom || "Non renseigné"}</p>
+                {isEditing ? (
+                  <input type="text" value={formData.nom} onChange={(e) => handleInputChange('nom', e.target.value)} />
+                ) : (
+                  <p>{profile.nom || "Non renseigné"}</p>
+                )}
               </div>
               <div className="info-item">
                 <label>Prénom</label>
-                <p>{profile.prenom || "Non renseigné"}</p>
+                {isEditing ? (
+                  <input type="text" value={formData.prenom} onChange={(e) => handleInputChange('prenom', e.target.value)} />
+                ) : (
+                  <p>{profile.prenom || "Non renseigné"}</p>
+                )}
               </div>
               <div className="info-item">
                 <label>Email</label>
@@ -430,18 +545,20 @@ export default function Profile() {
               </div>
               <div className="info-item">
                 <label>Date de naissance</label>
-                <p>{formatDate(profile.date_naissance)}</p>
+                {isEditing ? (
+                  <input type="date" value={formData.date_naissance} onChange={(e) => handleInputChange('date_naissance', e.target.value)} />
+                ) : (
+                  <p>{formatDate(profile.date_naissance)}</p>
+                )}
               </div>
               <div className="info-item">
                 <label>Rôle</label>
                 <p className="role-badge">{getRoleLabel(profile.role)}</p>
               </div>
-              {profile.departement && (
-                <div className="info-item">
-                  <label>Département</label>
-                  <p>{profile.departement}</p>
-                </div>
-              )}
+              <div className="info-item">
+                <label>Département</label>
+                <p>{profile.departement || "Non renseigné"}</p>
+              </div>
               {profile.classe && (
                 <div className="info-item">
                   <label>Classe</label>
@@ -454,9 +571,71 @@ export default function Profile() {
                   className="status-badge"
                   style={{ color: getStatusColor(profile.status) }}
                 >
-                  {getStatusLabel(profile.status)}
+                  {getStatusLabel(profile.status)} {profile.verified ? " (Vérifié)" : ""}
                 </p>
               </div>
+
+              {/* Changer mot de passe */}
+              <div className="info-item full-width">
+                <label>Sécurité</label>
+                {!showChangePwd ? (
+                  <div>
+                    <button className="change-pwd-btn" onClick={() => { setShowChangePwd(true); setPwdError(""); setPwdMessage(""); }}>
+                      Changer le mot de passe
+                    </button>
+                  </div>
+                ) : (
+                  <div className="change-pwd-form">
+                    <input type="password" placeholder="Mot de passe actuel" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                    <input type="password" placeholder="Nouveau mot de passe" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                    <input type="password" placeholder="Confirmer le nouveau mot de passe" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <div className="change-pwd-actions">
+                      <button className="save-btn" disabled={pwdSaving} onClick={async () => {
+                        setPwdError("");
+                        setPwdMessage("");
+                        if (!currentPassword || !newPassword || !confirmPassword) {
+                          setPwdError("Tous les champs sont requis");
+                          return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                          setPwdError("Les nouveaux mots de passe ne correspondent pas");
+                          return;
+                        }
+                        if (newPassword.length < 8) {
+                          setPwdError("Le mot de passe doit contenir au moins 8 caractères");
+                          return;
+                        }
+                        setPwdSaving(true);
+                        try {
+                          const token = getToken();
+                          const res = await fetch("http://localhost:5000/api/users/change-password", {
+                            method: "PUT",
+                            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                            body: JSON.stringify({ currentPassword, newPassword })
+                          });
+                          const data = await res.json();
+                          if (res.ok) {
+                            setPwdMessage("✅ Mot de passe changé avec succès");
+                            setShowChangePwd(false);
+                            setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+                          } else {
+                            setPwdError(data.message || "Erreur lors du changement de mot de passe");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          setPwdError("Erreur réseau lors du changement de mot de passe");
+                        } finally {
+                          setPwdSaving(false);
+                        }
+                      }}>Enregistrer</button>
+                      <button className="cancel-btn" onClick={() => { setShowChangePwd(false); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setPwdError(""); setPwdMessage(""); }}>Annuler</button>
+                    </div>
+                    {pwdMessage && <p className="success-message">{pwdMessage}</p>}
+                    {pwdError && <p className="error-message">{pwdError}</p>}
+                  </div>
+                )}
+              </div>
+
               {profile.status_reason && (
                 <div className="info-item full-width">
                   <label>Raison du statut</label>

@@ -1,108 +1,127 @@
 import React, { useEffect, useState, useMemo } from "react";
-import "./AdminValidation.css";
 import { getToken } from "../auth";
+import "./AdminValidation.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 export default function AdminValidation() {
-  const [pendingUsers, setPendingUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [reason, setReason] = useState("");
-  const [detailUser, setDetailUser] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const token = getToken();
 
-  // 🔍 FILTRES
+  // ================= STATE =================
+  const [pendingUsers, setPendingUsers] = useState([]);
+  const [detailUser, setDetailUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+
+  const [reason, setReason] = useState("");
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("");
 
-  const token = getToken();
-
+  // ================= FETCH =================
   useEffect(() => {
     fetchPendingUsers();
-    initTooltips();
   }, []);
-
-  // 🔧 Tooltips Bootstrap
-  const initTooltips = () => {
-    setTimeout(() => {
-      const tooltipTriggerList = document.querySelectorAll(
-        '[data-bs-toggle="tooltip"]'
-      );
-      tooltipTriggerList.forEach((el) => {
-        new window.bootstrap.Tooltip(el);
-      });
-    }, 300);
-  };
 
   const fetchPendingUsers = async () => {
     try {
       const res = await fetch("http://localhost:5000/api/admin/pending", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       const data = await res.json();
-      setPendingUsers(data || []);
-      initTooltips();
+      // Normalize fields to avoid null values which would break string methods
+      const normalized = (data || []).map((u) => ({
+        ...u,
+        nom: u.nom || "",
+        prenom: u.prenom || "",
+        email: u.email || "",
+        departement: u.departement || "",
+        classe: u.classe || "",
+      }));
+      setPendingUsers(normalized);
     } catch (err) {
-      console.error(err);
+      console.error("❌ fetchPendingUsers:", err);
     }
   };
 
-  // ✅ APPROUVER
+  // ================= ACTIONS =================
+
   const approveUser = async (id) => {
     if (!window.confirm("Voulez-vous vraiment valider ce compte ?")) return;
 
-    await fetch(`http://localhost:5000/api/admin/approve/${id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      await fetch(`http://localhost:5000/api/admin/approve/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    fetchPendingUsers();
+      setPendingUsers((prev) => prev.filter((u) => u.id !== id));
+    } catch (err) {
+      console.error("❌ approveUser:", err);
+    }
   };
 
-  // ❌ REJETER
-  const rejectUser = async (id) => {
-    await fetch(`http://localhost:5000/api/admin/reject/${id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ reason }),
-    });
+  const rejectUser = async () => {
+    if (!selectedUser || !reason.trim()) return;
 
-    setReason("");
-    fetchPendingUsers();
+    try {
+      await fetch(`http://localhost:5000/api/admin/reject/${selectedUser.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      setPendingUsers((prev) =>
+        prev.filter((u) => u.id !== selectedUser.id)
+      );
+
+      setReason("");
+      setSelectedUser(null);
+      setShowRejectModal(false);
+    } catch (err) {
+      console.error("❌ rejectUser:", err);
+    }
   };
 
-  // 🔍 FILTRAGE + RECHERCHE
+  // ================= FILTER =================
   const filteredUsers = useMemo(() => {
+    const s = (search || "").toLowerCase();
     return pendingUsers.filter((u) => {
-      const textMatch =
-        u.nom.toLowerCase().includes(search.toLowerCase()) ||
-        u.prenom.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase());
+      if (!u) return false;
+      const nom = (u.nom || "").toLowerCase();
+      const prenom = (u.prenom || "").toLowerCase();
+      const email = (u.email || "").toLowerCase();
 
+      const textMatch = nom.includes(s) || prenom.includes(s) || email.includes(s);
       const roleMatch = role === "" || u.role === role;
-
       return textMatch && roleMatch;
     });
   }, [pendingUsers, search, role]);
 
+  // ================= UI =================
   return (
-    <div className="container-fluid px-4 py-4">
-      {/* TITRE */}
+    <div className="validation-container">
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h3 className="fw-bold mb-0">Validation des comptes</h3>
+        <h3 className="fw-bold">Validation des comptes</h3>
         <span className="badge bg-warning text-dark">
           {filteredUsers.length} en attente
         </span>
       </div>
 
-      {/* 🔍 FILTRES */}
+      {/* FILTERS */}
       <div className="row mb-3">
         <div className="col-md-6">
           <input
-            type="text"
             className="form-control"
-            placeholder="Rechercher par nom, prénom ou email..."
+            placeholder="Nom, prénom ou email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -141,7 +160,6 @@ export default function AdminValidation() {
                     <th className="text-end">Actions</th>
                   </tr>
                 </thead>
-
                 <tbody>
                   {filteredUsers.map((user) => (
                     <tr key={user.id}>
@@ -153,40 +171,38 @@ export default function AdminValidation() {
                           {user.role}
                         </span>
                       </td>
-
                       <td className="text-end">
-                        {/* 👁️ DETAILS */}
+                        {/* VOIR DETAILS */}
                         <button
                           className="btn btn-outline-info btn-sm me-2"
-                          data-bs-toggle="tooltip"
                           title="Voir détails"
                           onClick={() => {
                             setDetailUser(user);
                             setShowDetailModal(true);
                           }}
                         >
-                          <i className="fas fa-eye"></i>
+                          👁
                         </button>
 
-                        {/* ✅ VALIDER */}
+                        {/* APPROUVER */}
                         <button
                           className="btn btn-outline-success btn-sm me-2"
-                          data-bs-toggle="tooltip"
-                          title="Valider le compte"
+                          title="Approuver"
                           onClick={() => approveUser(user.id)}
                         >
-                          <i className="fas fa-check"></i>
+                          ✔
                         </button>
 
-                        {/* ❌ REJETER */}
+                        {/* REJETER */}
                         <button
                           className="btn btn-outline-danger btn-sm"
-                          data-bs-toggle="modal"
-                          data-bs-target="#rejectModal"
-                          title="Rejeter le compte"
-                          onClick={() => setSelectedUser(user)}
+                          title="Rejeter"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowRejectModal(true);
+                          }}
                         >
-                          <i className="fas fa-times"></i>
+                          ✖
                         </button>
                       </td>
                     </tr>
@@ -198,7 +214,7 @@ export default function AdminValidation() {
         </div>
       </div>
 
-      {/* MODAL DETAILS */}
+      {/* ================= MODAL DETAILS ================= */}
       {showDetailModal && detailUser && (
         <div
           className="modal fade show d-block"
@@ -207,7 +223,7 @@ export default function AdminValidation() {
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Détails utilisateur</h5>
+                <h5>Détails de l'utilisateur</h5>
                 <button
                   className="btn-close"
                   onClick={() => setShowDetailModal(false)}
@@ -215,66 +231,24 @@ export default function AdminValidation() {
               </div>
 
               <div className="modal-body">
-                <div className="row mb-3">
-                  <div className="col-md-6">
-                    <p><strong>Nom :</strong> {detailUser.nom}</p>
-                    <p><strong>Prénom :</strong> {detailUser.prenom}</p>
-                    <p><strong>Email :</strong> {detailUser.email}</p>
-                  </div>
-                  <div className="col-md-6">
-                    <p><strong>Rôle :</strong> {detailUser.role}</p>
-                    <p><strong>Statut :</strong> {detailUser.status}</p>
-                  </div>
-                </div>
+                <p><b>Nom :</b> {detailUser.nom}</p>
+                <p><b>Prénom :</b> {detailUser.prenom}</p>
+                <p><b>Email :</b> {detailUser.email}</p>
+                <p><b>Rôle :</b> {detailUser.role}</p>
+                <p><b>CIN :</b> {detailUser.cin || "—"}</p>
+                <p><b>Date de naissance :</b> {detailUser.date_naissance || "—"}</p>
+                <p><b>Département :</b> {detailUser.departement || "—"}</p>
+                <p><b>Classe :</b> {detailUser.classe || "—"}</p>
 
-                <hr />
-
-                {/* ÉTUDIANT */}
-                {detailUser.role === "etudiant" && (
-                  <>
-                    <h6 className="fw-bold mb-3">Informations Étudiant</h6>
-                    <p><strong>Département :</strong> {detailUser.departement || "N/A"}</p>
-                    <p><strong>Classe :</strong> {detailUser.classe || "N/A"}</p>
-
-                    {detailUser.attestation && (
-                      <div className="alert alert-info d-flex justify-content-between align-items-center">
-                        <span><i className="fas fa-file-pdf me-2"></i> Attestation étudiant</span>
-                        <a
-                          href={`http://localhost:5000/uploads/${detailUser.attestation}`}
-                          className="btn btn-sm btn-primary"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                        >
-                          <i className="fas fa-download me-1"></i> Télécharger
-                        </a>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* ENSEIGNANT */}
-                {detailUser.role === "enseignant" && (
-                  <>
-                    <h6 className="fw-bold mb-3">Informations Enseignant</h6>
-                    <p><strong>Département :</strong> {detailUser.departement || "N/A"}</p>
-                    <p><strong>Classes enseignées :</strong> {detailUser.classes_enseignees || "N/A"}</p>
-
-                    {detailUser.verification_document && (
-                      <div className="alert alert-warning d-flex justify-content-between align-items-center">
-                        <span><i className="fas fa-file-alt me-2"></i> Document de vérification</span>
-                        <a
-                          href={`http://localhost:5000/uploads/${detailUser.verification_document}`}
-                          className="btn btn-sm btn-warning"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download
-                        >
-                          <i className="fas fa-download me-1"></i> Télécharger
-                        </a>
-                      </div>
-                    )}
-                  </>
+                {detailUser.proof_of_id_url && (
+                  <a
+                    href={detailUser.proof_of_id_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary btn-sm mt-2"
+                  >
+                    Télécharger le document
+                  </a>
                 )}
               </div>
             </div>
@@ -282,39 +256,49 @@ export default function AdminValidation() {
         </div>
       )}
 
-      {/* MODAL REJET */}
-      <div className="modal fade" id="rejectModal">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Raison du rejet</h5>
-              <button className="btn-close" data-bs-dismiss="modal" />
-            </div>
+      {/* ================= MODAL REJET ================= */}
+      {showRejectModal && (
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(0,0,0,.5)" }}
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>Raison du rejet</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setShowRejectModal(false)}
+                />
+              </div>
 
-            <div className="modal-body">
-              <textarea
-                className="form-control"
-                rows="4"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-            </div>
+              <div className="modal-body">
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </div>
 
-            <div className="modal-footer">
-              <button className="btn btn-light" data-bs-dismiss="modal">
-                Annuler
-              </button>
-              <button
-                className="btn btn-danger"
-                data-bs-dismiss="modal"
-                onClick={() => rejectUser(selectedUser?.id)}
-              >
-                Rejeter
-              </button>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-light"
+                  onClick={() => setShowRejectModal(false)}
+                >
+                  Annuler
+                </button>
+                <button
+                  className="btn btn-danger"
+                  onClick={rejectUser}
+                >
+                  Rejeter
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

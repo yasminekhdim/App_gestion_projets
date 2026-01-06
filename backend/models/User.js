@@ -38,7 +38,7 @@ const User = {
         nom, prenom, email, mot_de_passe, role, cin, date_naissance,
         departement, classe_id, proof_of_id_url, proof_of_id_name, proof_of_id_public_id,
         proof_of_id_added_at, status, verified
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'incomplete', 0)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'pending', 0)`,
       [
         nom,
         prenom,
@@ -82,16 +82,18 @@ const User = {
 
 // 🔹 Mettre à jour le statut (admin valide / rejette)
   updateStatus: async (id, status, reason = null) => {
-    await db.query(
-      `UPDATE users 
-       SET status = ?, 
-           verified = ?, 
-           status_reason = ?, 
-           status_updated_at = NOW() 
-       WHERE id = ?`,
-      [status, status === "approved" ? 1 : 0, reason, id]
-    );
-  },
+  const verified = status === "approved" ? 1 : 0;
+  await db.query(
+    `UPDATE users
+     SET 
+       status = ?,
+       verified = ?,
+       status_reason = ?,
+       status_updated_at = NOW()
+     WHERE id = ?`,
+    [status, verified, reason, id]
+  );
+},
 
 
 // réinitialiser le mots de passe 

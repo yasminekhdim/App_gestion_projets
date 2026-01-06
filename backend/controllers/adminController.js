@@ -2,6 +2,7 @@ import db from "../config/db.js";
 import transporter from "../config/Mail.js";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import { deleteFile } from "../utils/cloudinaryUpload.js";
 
 /**
  * 🔹 Récupérer tous les utilisateurs en attente d'approbation
@@ -10,13 +11,14 @@ export const getPendingUsers = async (req, res) => {
   try {
     const [users] = await db.query(
       `SELECT 
-        id, nom, prenom, email, role, status, date_creation, 
-        departement, classe_id, cin, date_naissance,
-        proof_of_id_url, proof_of_id_name, proof_of_id_public_id, proof_of_id_added_at,
-        status_reason, status_updated_at, verified
-      FROM users 
-      WHERE status = 'pending'
-      ORDER BY date_creation DESC`
+        u.id, u.nom, u.prenom, u.email, u.role, u.status, u.date_creation, 
+        u.departement, u.classe_id, c.classe AS classe, u.cin, u.date_naissance,
+        u.proof_of_id_url, u.proof_of_id_name, u.proof_of_id_public_id, u.proof_of_id_added_at,
+        u.status_reason, u.status_updated_at, u.verified
+      FROM users u
+      LEFT JOIN classes c ON u.classe_id = c.id
+      WHERE u.status = 'pending'
+      ORDER BY u.date_creation DESC`
     );
     console.log(users);
     res.json(users);
@@ -87,33 +89,45 @@ export const rejectUser = async (req, res) => {
       return res.status(404).json({ message: "Utilisateur introuvable" });
     }
 
-    // Mettre à jour le statut et verified
-    await User.updateStatus(userId, "rejected", reason);
-
-    // Envoyer email de rejet
+    // Envoyer email de rejet + notification que le compte sera supprimé
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: "Votre compte a été rejeté ❌",
+      subject: "Votre compte a été rejeté et supprimé ❌",
       html: `
         <h2>Bonjour ${user.prenom} ${user.nom},</h2>
         <p>Votre compte a été examiné, mais n'a malheureusement pas été approuvé.</p>
         <p><b>Raison :</b> ${reason}</p>
-        <br/>
-        <p>Vous pouvez modifier les informations et faire une nouvelle demande d'inscription.</p>
+        <p>Suite à cette décision, votre compte sera supprimé de la plateforme.</p>
         <br/>
         <p>Cordialement,</p>
         <p><b>L’équipe Support</b></p>
       `,
     });
 
-    res.json({ message: "Utilisateur rejeté et email envoyé." });
+    // Supprimer les fichiers Cloudinary associés si présents (photo de profil, preuve d'identité)
+    try {
+      if (user.profilePic_public_id) {
+        await deleteFile(user.profilePic_public_id).catch((e) => console.warn('⚠️ cloud delete profilePic failed', e));
+      }
+      if (user.proof_of_id_public_id) {
+        await deleteFile(user.proof_of_id_public_id).catch((e) => console.warn('⚠️ cloud delete proof_of_id failed', e));
+      }
+    } catch (cleanupErr) {
+      console.warn('⚠️ Cleanup error after reject:', cleanupErr);
+      // continue even if cleanup fails
+    }
+
+    // Supprimer l'utilisateur de la base
+    await User.deleteUser(userId);
+
+    res.json({ message: 'Utilisateur rejeté et supprimé.' });
 
   } catch (error) {
-    console.error("❌ Erreur rejectUser :", error);
-    res.status(500).json({ message: "Erreur serveur" });
+    console.error('❌ Erreur rejectUser :', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
-  };
+};
 
   /**
  * 🔹 Liste des utilisateurs approuvés

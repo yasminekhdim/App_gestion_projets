@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
 import { useState } from "react";
-import './authForms.css'
 import backgroundImage from "../assets/image.png";
 export default function ResetPassword() {
   const { token } = useParams();

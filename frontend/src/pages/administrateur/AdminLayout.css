@@ -1,0 +1,78 @@
+.admin-layout {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--color-background, #E3E7ED);
+}
+
+.admin-main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--spacing-xl, 2rem);
+  width: 100%;
+  min-height: 0; /* Important for flex children */
+}
+
+/* Smooth transitions */
+.admin-main {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Fix for container-fluid in admin pages */
+.admin-main .container-fluid {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.admin-main .row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.admin-main .row > * {
+  padding-left: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+  padding-right: calc(var(--bs-gutter-x, 1.5rem) * 0.5);
+}
+
+/* Ensure proper spacing and layout for admin pages */
+.admin-main .dashboard,
+.admin-main .validation-container,
+.admin-main .users-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+.admin-main h3 {
+  color: var(--color-dark-text, #2E2F3E);
+  font-weight: 600;
+  font-size: var(--font-size-2xl, 1.5rem);
+}
+
+.admin-main .text-muted {
+  color: var(--color-secondary-text, #697483);
+}
+
+.admin-main .badge {
+  padding: var(--spacing-xs, 0.25rem) var(--spacing-sm, 0.5rem);
+  border-radius: var(--radius-sm, 0.375rem);
+  font-weight: 500;
+  font-size: var(--font-size-sm, 0.875rem);
+}
+
+.admin-main .badge.bg-warning {
+  background-color: var(--color-warning, #F59E0B) !important;
+  color: var(--color-dark-text, #2E2F3E);
+}
+
+.admin-main .badge.bg-primary {
+  background-color: var(--color-primary, #804EEC) !important;
+  color: white;
+}
+

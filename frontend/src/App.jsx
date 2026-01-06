@@ -1,23 +1,24 @@
 import { BrowserRouter, Routes, Route , Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import CompleteProfile from './pages/complete-profile'
+import ProfilePending from './pages/profilePending'
 import Homensg from './pages/enseignant/Homensg'
 import Students from './pages/enseignant/Students'
 import CreateProject from './pages/enseignant/CreateProject'
-import ResetPassword from './pages/ResetPassword'
-import ForgotPassword from './pages/ForgotPassword'
-import ProfilePending from './pages/profilePending'
-import CompleteProfile from './pages/complete-profile'
 import ProjectsList from './pages/enseignant/ProjectsList'
 import ProjectDetails from './pages/enseignant/ProjectDetails'
 import Hometud from './pages/etudiant/Hometud'
 import Profile from './pages/Profile'
-import ProtectedRoute from "./composants/ProtectedRoute";
-import AdminValidation from './pages/administrateur/AdminValidation'
-import Dashboard from './pages/administrateur/Dashboard'
 import AdminLayout from './pages/administrateur/AdminLayout'
-import AdminUsers from "./pages/administrateur/AdminUsers";
+import Dashboard from './pages/administrateur/Dashboard'
+import AdminValidation from './pages/administrateur/AdminValidation'
+import AdminUsers from './pages/administrateur/AdminUsers'
 import AdminProfile from './pages/administrateur/AdminProfile'
+import ProtectedRoute from "./composants/ProtectedRoute";
+import './styles/design-system.css';
 import './App.css'
 
 
@@ -29,10 +30,24 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-         <Route path="/forgetPass" element={<ForgotPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/resetPassword/:token" element={<ResetPassword />} />
-        <Route path="/complete-profile" element={<CompleteProfile />} />
-        <Route path="/profilePending" element={<ProfilePending />} />
+        <Route 
+          path="/complete-profile" 
+          element={
+            <ProtectedRoute allowedRoles={["administrateur", "enseignant", "etudiant"]}>
+              <CompleteProfile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profilePending" 
+          element={
+            <ProtectedRoute allowedRoles={["administrateur", "enseignant", "etudiant"]}>
+              <ProfilePending />
+            </ProtectedRoute>
+          } 
+        />
         <Route path="/admin" element={
         <ProtectedRoute allowedRoles={["administrateur"]}>
             <AdminLayout />

@@ -1,6 +1,6 @@
 import express from "express";
 import multer from "multer";
-import { getProfile, updateProfilePicture } from "../controllers/userController.js";
+import { getProfile, updateProfilePicture, updateProfile, changePassword } from "../controllers/userController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -27,6 +27,12 @@ router.use(verifyToken);
 
 // Route pour récupérer le profil
 router.get("/profile", getProfile);
+
+// Route pour mettre à jour les informations du profil (champs non sensibles)
+router.put("/profile", updateProfile);
+
+// Route pour changer le mot de passe de l'utilisateur connecté
+router.put("/change-password", changePassword);
 
 // Route pour mettre à jour la photo de profil
 router.put("/profile/picture", (req, res, next) => {

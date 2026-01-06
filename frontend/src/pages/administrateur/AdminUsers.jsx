@@ -93,7 +93,7 @@ export default function AdminUsers() {
 });
 
   return (
-    <div className="container-fluid px-4 py-4">
+    <div className="users-container">
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h3 className="fw-bold">Gestion des utilisateurs</h3>

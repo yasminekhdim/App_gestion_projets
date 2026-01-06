@@ -1,42 +1,58 @@
+/* =========================
+   FIX CRITIQUE (VITE)
+   ========================= */
+
+/* ❌ NE JAMAIS limiter #root pour un dashboard */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* =========================
+   ADMIN LAYOUT (OPTIONNEL)
+   ========================= */
+
+/* Conteneur principal */
+.admin-container {
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Contenu principal */
+.main-content {
+  margin-left: 250px;
+  min-height: 100vh;
+  overflow-y: auto;
+  background-color: #f8f9fc;
 }
 
-.card {
-  padding: 2em;
+/* Page content */
+.page-content {
+  flex-grow: 1;
 }
 
+/* =========================
+   (OPTIONNEL) SUPPRESSION DU CSS DEMO VITE
+   ========================= */
+
+/* Tu peux supprimer tout ce qui suit si inutile */
+.logo,
+.logo:hover,
+.logo.react:hover,
 .read-the-docs {
-  color: #888;
+  display: none;
 }
