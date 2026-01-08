@@ -290,9 +290,6 @@ export default function CreateProject() {
     <div className="create-project-container">
       <div className="create-project-card">
         <div className="create-project-header">
-          <button onClick={handleBack} className="back-btn">
-            ← Retour
-          </button>
           <h1>{step === 1 ? "Créer un Projet" : "Assigner des Étudiants"}</h1>
         </div>
 

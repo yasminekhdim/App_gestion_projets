@@ -32,16 +32,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.35); /* adjust opacity if needed */
+  background: linear-gradient(135deg, rgba(109, 93, 246, 0.85) 0%, rgba(76, 184, 196, 0.85) 100%);
+  /* adjust opacity if needed */
   z-index: 0;
 }
 
 /* Container inside the background - keeps stacking context and layout */
 .complete-profile-container {
   position: relative;
-  z-index: 1;          /* above the overlay */
+  z-index: 1;
+  /* above the overlay */
   width: 100%;
-  max-width: 1200px;   /* page can grow to a comfortable max on large screens */
+  max-width: 1200px;
+  /* page can grow to a comfortable max on large screens */
   padding: 2rem;
   box-sizing: border-box;
   display: flex;
@@ -51,17 +54,19 @@
 
 /* Card (centered) */
 .form-card {
-  background: rgba(25, 31, 45, 0.85);
+  background: #FFFFFF;
   padding: 2.6rem 2.2rem;
   border-radius: 1rem;
-  width: 420px;           /* desired card width on desktop */
-  max-width: 95vw;        /* responsive on small screens */
+  width: 420px;
+  /* desired card width on desktop */
+  max-width: 95vw;
+  /* responsive on small screens */
   text-align: left;
   position: relative;
   z-index: 2;
   backdrop-filter: blur(10px);
-  color: #fff;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+  color: #111827;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
 /* If you want a wider card on large displays, change width via media query below */
@@ -71,7 +76,7 @@
   font-size: 1.7rem;
   font-weight: 800;
   margin-bottom: 1rem;
-  color: #fff;
+  color: #111827;
 }
 
 /* Animations */
@@ -84,6 +89,7 @@
     opacity: 0;
     transform: translateY(18px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -104,7 +110,7 @@
   align-items: center;
   gap: .6rem;
   cursor: pointer;
-  color: #fff;
+  color: #111827;
   user-select: none;
 }
 
@@ -122,7 +128,7 @@ textarea {
   padding: 0.9rem 1rem;
   border-radius: 12px;
   border: none;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   color: #222;
   width: 100%;
   margin-bottom: 0.9rem;
@@ -140,13 +146,13 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  box-shadow: 0 0 12px 3px rgba(255,138,101,0.12);
+  box-shadow: 0 0 0 4px rgba(109, 93, 246, 0.1);
   background: #fff;
 }
 
 /* Submit button */
 .submit-btn {
-  background: linear-gradient(135deg, #ff8a65, #ff7043);
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
   padding: 0.95rem 1rem;
   border: none;
   border-radius: 12px;
@@ -161,7 +167,7 @@ textarea:focus {
 
 .submit-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 22px rgba(255, 110, 70, 0.25);
+  box-shadow: 0 10px 25px rgba(109, 93, 246, 0.4);
 }
 
 /* Message */
@@ -172,37 +178,49 @@ textarea:focus {
   font-size: 0.95rem;
 }
 
-.message.error { color: #ff6b6b; }
-.message.success { color: #98e9a3; }
+.message.error {
+  color: #ff6b6b;
+}
+
+.message.success {
+  color: #98e9a3;
+}
 
 /* Small helpers */
 label {
   display: block;
   margin-bottom: 0.35rem;
   font-weight: 600;
-  color: #e6eef8;
+  color: #111827;
   font-size: 0.95rem;
 }
 
 /* Responsive tweaks */
 @media (min-width: 900px) {
+
   /* make card a bit wider on larger screens */
-  .form-card { width: 520px; }
+  .form-card {
+    width: 520px;
+  }
 }
 
 @media (max-width: 520px) {
+
   /* improved spacing for very small screens */
   .form-card {
     padding: 1.6rem;
     border-radius: 0.9rem;
   }
 
-  .title { font-size: 1.4rem; }
+  .title {
+    font-size: 1.4rem;
+  }
 }
 
 /* Accessibility: ensure focus outlines are visible for keyboard users */
-input:focus, button:focus, select:focus, textarea:focus {
+input:focus,
+button:focus,
+select:focus,
+textarea:focus {
   outline-offset: 2px;
 }
-
-

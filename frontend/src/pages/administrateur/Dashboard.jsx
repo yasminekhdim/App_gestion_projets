@@ -38,8 +38,30 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <div className="p-4 text-center">Chargement...</div>;
-  if (error) return <div className="alert alert-danger m-4">{error}</div>;
+  if (loading) return (
+    <div className="dashboard">
+      <div style={{ textAlign: 'center', padding: '4rem', color: '#6D5DF6', fontSize: '1.25rem', fontWeight: 600 }}>
+        <div style={{ marginBottom: '1rem', fontSize: '3rem' }}>⏳</div>
+        Chargement...
+      </div>
+    </div>
+  );
+  if (error) return (
+    <div className="dashboard">
+      <div style={{ 
+        background: '#FEE2E2', 
+        color: '#991B1B', 
+        padding: '1.5rem', 
+        borderRadius: '16px', 
+        margin: '2rem',
+        border: '2px solid #EF4444',
+        textAlign: 'center',
+        fontWeight: 600
+      }}>
+        {error}
+      </div>
+    </div>
+  );
 
   // Pie Chart
   const pieData = [
@@ -55,15 +77,15 @@ export default function Dashboard() {
     <div className="dashboard">
       {/* HEADER */}
       <div className="mb-4 text-center">
-        <h3 className="fw-bold">Dashboard Administrateur</h3>
+        <h3 className="fw-bold">📊 Dashboard Administrateur</h3>
         <p className="text-muted">
-          Vue d’ensemble de l’activité et des utilisateurs
+          Vue d'ensemble de l'activité et des utilisateurs
         </p>
       </div>
 
       {/* STATS */}
       <div className="row g-4">
-        <StatCard title="Utilisateurs" value={stats.totalUsers} icon="👥" />
+        <StatCard title="Utilisateurs" value={stats.totalUsers} icon="👥" accent="info" />
         <StatCard title="En attente" value={stats.pendingUsers} icon="⏳" accent="warning" />
         <StatCard title="Actifs" value={stats.activeUsers} icon="✅" accent="success" />
         <StatCard title="Désactivés" value={stats.disabledUsers} icon="🚫" accent="danger" />
@@ -85,8 +107,8 @@ export default function Dashboard() {
       <div className="row mt-5">
         {/* Pie */}
         <div className="col-md-6 mb-4">
-          <div className="card shadow-sm border-0 p-3">
-            <h5 className="fw-bold text-center mb-3">Actifs vs Désactivés</h5>
+          <div className="chart-container">
+            <h5 className="fw-bold text-center mb-3 chart-title">Actifs vs Désactivés</h5>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -110,8 +132,8 @@ export default function Dashboard() {
 
         {/* Bar Chart Derniers inscrits */}
         <div className="col-md-6 mb-4">
-          <div className="card shadow-sm border-0 p-3">
-            <h5 className="fw-bold text-center mb-3">
+          <div className="chart-container">
+            <h5 className="fw-bold text-center mb-3 chart-title">
               Derniers utilisateurs inscrits
             </h5>
             <ResponsiveContainer width="100%" height={300}>
@@ -119,7 +141,13 @@ export default function Dashboard() {
                 <XAxis dataKey="name" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#4CAF50" />
+                <Bar dataKey="count" fill="url(#colorGradient)" radius={[8, 8, 0, 0]} />
+                <defs>
+                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6D5DF6" />
+                    <stop offset="100%" stopColor="#4CB8C4" />
+                  </linearGradient>
+                </defs>
               </BarChart>
             </ResponsiveContainer>
           </div>

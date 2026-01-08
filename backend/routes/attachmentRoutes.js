@@ -7,8 +7,51 @@ import {
 } from "../controllers/attachmentController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import db from "../config/db.js";
+import cloudinary from "../config/cloudinary.js";
 
 const router = express.Router();
+
+// Build a Cloudinary URL that includes basic auth when needed (for private/authenticated assets)
+const buildAuthenticatedUrl = (secureUrl) => {
+  try {
+    const url = new URL(secureUrl);
+    const cfg = cloudinary.config();
+    if (cfg.api_key && cfg.api_secret) {
+      url.username = cfg.api_key;
+      url.password = cfg.api_secret;
+    }
+    return url.toString();
+  } catch (err) {
+    console.error("Invalid Cloudinary URL:", err);
+    return secureUrl;
+  }
+};
+
+// Build a short-lived signed URL for authenticated Cloudinary assets using the stored public_id
+const buildSignedUrl = (attachment) => {
+  // If we don't have the public_id, fall back to the stored URL
+  if (!attachment.fichier_public_id) {
+    return attachment.fichier_url;
+  }
+
+  const formatFromName = (attachment.fichier_name || "").split(".").pop() || undefined;
+  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 5; // 5 minutes
+  const resourceType = attachment.file_type && attachment.file_type.startsWith("image/")
+    ? "image"
+    : "raw";
+
+  // Most non-images (pdf, docx, zip, etc.) are stored as resource_type raw when upload resource_type=auto
+  const options = {
+    type: "authenticated",
+    resource_type: resourceType,
+    expires_at: expiresAt,
+  };
+  return cloudinary.utils.private_download_url(
+    attachment.fichier_public_id,
+    formatFromName,
+    options
+  );
+};
 
 // Configuration de multer pour plusieurs fichiers
 const storage = multer.memoryStorage();
@@ -74,7 +117,7 @@ router.get('/id/:attachment_id/view', async (req, res) => {
     const { attachment_id } = req.params;
     // Delegate to controller-like logic inline to reuse verifyToken above
     const [attachments] = await db.query(
-      `SELECT a.id, a.fichier_url, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
+      `SELECT a.id, a.fichier_url, a.fichier_public_id, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
         CASE WHEN a.entity_type = 'projet' THEN p.enseignant_id
              WHEN a.entity_type = 'tache' THEN p2.enseignant_id
         END as enseignant_id
@@ -93,8 +136,9 @@ router.get('/id/:attachment_id/view', async (req, res) => {
       return res.status(403).json({ message: "Vous n'avez pas la permission d'accéder à cette pièce jointe." });
     }
 
-    // Redirect to stored secure URL directly
-    res.redirect(attachment.fichier_url);
+    // Redirect to a signed URL to support authenticated/private assets
+    const signedUrl = buildSignedUrl(attachment);
+    res.redirect(signedUrl);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -106,7 +150,7 @@ router.get('/id/:attachment_id/signed', async (req, res) => {
   try {
     const { attachment_id } = req.params;
     const [attachments] = await db.query(
-      `SELECT a.id, a.fichier_url, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
+      `SELECT a.id, a.fichier_url, a.fichier_public_id, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
         CASE WHEN a.entity_type = 'projet' THEN p.enseignant_id
              WHEN a.entity_type = 'tache' THEN p2.enseignant_id
         END as enseignant_id
@@ -125,8 +169,9 @@ router.get('/id/:attachment_id/signed', async (req, res) => {
       return res.status(403).json({ message: "Vous n'avez pas la permission d'accéder à cette pièce jointe." });
     }
 
-    // Return stored secure URL directly
-    res.status(200).json({ url: attachment.fichier_url });
+    // Return short-lived signed URL
+    const signedUrl = buildSignedUrl(attachment);
+    res.status(200).json({ url: signedUrl });
   } catch (error) {
     console.error('Erreur lors de la récupération de l URL:', error);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -138,7 +183,7 @@ router.get('/id/:attachment_id/stream', async (req, res) => {
   try {
     const { attachment_id } = req.params;
     const [attachments] = await db.query(
-      `SELECT a.id, a.fichier_url, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
+      `SELECT a.id, a.fichier_url, a.fichier_public_id, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
         CASE WHEN a.entity_type = 'projet' THEN p.enseignant_id
              WHEN a.entity_type = 'tache' THEN p2.enseignant_id
         END as enseignant_id
@@ -157,9 +202,10 @@ router.get('/id/:attachment_id/stream', async (req, res) => {
       return res.status(403).json({ message: "Vous n'avez pas la permission d'accéder à cette pièce jointe." });
     }
 
-    // Use stored secure URL directly
+    // Use signed URL (works for authenticated/private assets)
     const https = await import('https');
-    https.get(attachment.fichier_url, (remoteRes) => {
+    const targetUrl = buildSignedUrl(attachment);
+    https.get(targetUrl, (remoteRes) => {
       if (remoteRes.statusCode !== 200) {
         return res.status(remoteRes.statusCode).send('Erreur lors de la récupération du fichier.');
       }
@@ -183,7 +229,7 @@ router.get('/id/:attachment_id/download', async (req, res) => {
   try {
     const { attachment_id } = req.params;
     const [attachments] = await db.query(
-      `SELECT a.id, a.fichier_url, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
+      `SELECT a.id, a.fichier_url, a.fichier_public_id, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
         CASE WHEN a.entity_type = 'projet' THEN p.enseignant_id
              WHEN a.entity_type = 'tache' THEN p2.enseignant_id
         END as enseignant_id
@@ -203,7 +249,8 @@ router.get('/id/:attachment_id/download', async (req, res) => {
     }
 
     const https = await import('https');
-    https.get(attachment.fichier_url, (remoteRes) => {
+    const targetUrl = buildSignedUrl(attachment);
+    https.get(targetUrl, (remoteRes) => {
       if (remoteRes.statusCode !== 200) {
         return res.status(remoteRes.statusCode).send('Erreur lors de la récupération du fichier.');
       }
@@ -227,7 +274,7 @@ router.get('/id/:attachment_id/signed', async (req, res) => {
   try {
     const { attachment_id } = req.params;
     const [attachments] = await db.query(
-      `SELECT a.id, a.fichier_url, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
+      `SELECT a.id, a.fichier_url, a.fichier_public_id, a.fichier_name, a.file_type, a.entity_type, a.entity_id,
         CASE WHEN a.entity_type = 'projet' THEN p.enseignant_id
              WHEN a.entity_type = 'tache' THEN p2.enseignant_id
         END as enseignant_id
@@ -278,9 +325,10 @@ router.get('/id/:attachment_id/stream', async (req, res) => {
       return res.status(403).json({ message: "Vous n'avez pas la permission d'accéder à cette pièce jointe." });
     }
 
-    // Use stored secure URL directly
+    // Use signed URL (works for authenticated/private assets)
     const https = await import('https');
-    https.get(attachment.fichier_url, (remoteRes) => {
+    const targetUrl = buildSignedUrl(attachment);
+    https.get(targetUrl, (remoteRes) => {
       if (remoteRes.statusCode !== 200) {
         return res.status(remoteRes.statusCode).send('Erreur lors de la récupération du fichier.');
       }
@@ -324,7 +372,8 @@ router.get('/id/:attachment_id/download', async (req, res) => {
     }
 
     const https = await import('https');
-    https.get(attachment.fichier_url, (remoteRes) => {
+    const targetUrl = buildSignedUrl(attachment);
+    https.get(targetUrl, (remoteRes) => {
       if (remoteRes.statusCode !== 200) {
         return res.status(remoteRes.statusCode).send('Erreur lors de la récupération du fichier.');
       }

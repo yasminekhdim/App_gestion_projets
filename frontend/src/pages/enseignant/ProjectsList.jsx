@@ -110,9 +110,6 @@ export default function ProjectsList() {
     <div className="projects-list-container">
       <div className="projects-content">
         <div className="projects-header">
-          <button onClick={handleBack} className="back-btn">
-            ← Retour
-          </button>
           <div className="header-title-section">
             <h1>Mes Projets</h1>
             <p className="projects-subtitle">

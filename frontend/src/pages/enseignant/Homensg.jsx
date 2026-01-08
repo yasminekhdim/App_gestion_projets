@@ -7,6 +7,10 @@ export default function Homensg() {
   const [user, setUser] = useState(null);
   const [studentsCount, setStudentsCount] = useState(0);
   const [projectsCount, setProjectsCount] = useState(0);
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+  const [tasksInProgress, setTasksInProgress] = useState(0);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -18,6 +22,8 @@ export default function Homensg() {
     setUser(userData);
     fetchStudentsCount();
     fetchProjectsCount();
+    fetchRecentProjects();
+    fetchTasksStats();
   }, [navigate]);
 
   const fetchStudentsCount = async () => {
@@ -60,6 +66,49 @@ export default function Homensg() {
     }
   };
 
+  const fetchRecentProjects = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch("http://localhost:5000/api/projects?limit=3&sort=created_at&order=desc", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRecentProjects(data.projects || []);
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement des projets récents :", err);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
+
+  const fetchTasksStats = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch("http://localhost:5000/api/teachers/tasks/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTasksInProgress(data.inProgress || 0);
+        setTasksCompleted(data.completed || 0);
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement des statistiques des tâches :", err);
+    }
+  };
+
   const handleLogout = () => {
     clearAuth();
     navigate("/login");
@@ -86,22 +135,9 @@ export default function Homensg() {
   return (
     <div className="home-container">
       <header className="home-header">
-        <div className="header-content">
-          <div className="header-left">
-            <h1 className="welcome-title">Tableau de bord Enseignant</h1>
-            <p className="welcome-subtitle">Bienvenue, {user.nom || user.email}</p>
-          </div>
-          <div className="header-actions">
-            <button className="profile-btn" onClick={handleProfile}>
-              Profil
-            </button>
-            <button className="logout-btn" onClick={handleLogout}>
-              Déconnexion
-            </button>
-          </div>
-        </div>
+       
       </header>
-
+      
       <main className="home-main">
         <div className="stats-grid">
           <div className="stat-card stat-card-primary">
@@ -123,7 +159,7 @@ export default function Homensg() {
           <div className="stat-card stat-card-warning">
             <div className="stat-icon">📝</div>
             <div className="stat-content">
-              <h3 className="stat-value">0</h3>
+              <h3 className="stat-value">{tasksInProgress}</h3>
               <p className="stat-label">Tâches en cours</p>
             </div>
           </div>
@@ -131,7 +167,7 @@ export default function Homensg() {
           <div className="stat-card stat-card-info">
             <div className="stat-icon">✅</div>
             <div className="stat-content">
-              <h3 className="stat-value">0</h3>
+              <h3 className="stat-value">{tasksCompleted}</h3>
               <p className="stat-label">Tâches terminées</p>
             </div>
           </div>
@@ -170,13 +206,44 @@ export default function Homensg() {
         <div className="recent-projects">
           <h2 className="section-title">Projets récents</h2>
           <div className="projects-list">
-            <div className="project-item">
-              <div className="project-icon">📁</div>
-              <div className="project-content">
-                <p className="project-name">Aucun projet récent</p>
-                <span className="project-status">--</span>
+            {loadingRecent ? (
+              <div className="project-item">
+                <div className="project-icon">⏳</div>
+                <div className="project-content">
+                  <p className="project-name">Chargement...</p>
+                  <span className="project-status">--</span>
+                </div>
               </div>
-            </div>
+            ) : recentProjects.length === 0 ? (
+              <div className="project-item">
+                <div className="project-icon">📁</div>
+                <div className="project-content">
+                  <p className="project-name">Aucun projet récent</p>
+                  <span className="project-status">--</span>
+                </div>
+              </div>
+            ) : (
+              recentProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="project-item"
+                  onClick={() => navigate(`/enseignant/projects/${project.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="project-icon">📁</div>
+                  <div className="project-content">
+                    <p className="project-name">{project.libelle}</p>
+                    <span className="project-status">
+                      {project.matiere} • {new Date(project.created_at).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </main>

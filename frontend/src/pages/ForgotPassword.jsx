@@ -1,5 +1,7 @@
 import { useState } from "react";
 import backgroundImage from "../assets/image.png";
+import "./ForgotPassword.css";
+
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -18,22 +20,30 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="auth-container"  style={{ backgroundImage: `url(${backgroundImage})` }}>
-  <div className="auth-card">
-    <h2>🔑 Mot de passe oublié</h2>
-    <form className="auth-form" onSubmit={handleSubmit}>
-      <input
-        type="email"
-        placeholder="Votre email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <button type="submit">Envoyer le lien</button>
-      <a href="/login">Se connecter</a>
-    </form>
-    {message && <p className="message">{message}</p>}
-  </div>
-</div>
+    <div className="forgot-password-container" style={{ backgroundImage: `url(${backgroundImage})` }}>
+      <div className="forgot-password-card">
+        <div className="forgot-password-icon">🔑</div>
+        <h2>Mot de passe oublié</h2>
+        <p className="forgot-password-subtitle">
+          Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+        </p>
+        <form className="forgot-password-form" onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Votre email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <button type="submit" className="forgot-password-submit-btn">Envoyer le lien</button>
+          <a href="/login" className="forgot-password-back-link">← Retour à la connexion</a>
+        </form>
+        {message && (
+          <p className={`forgot-password-message ${message.includes('succès') || message.includes('envoyé') ? 'success' : 'error'}`}>
+            {message}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }

@@ -4,7 +4,7 @@
   width: 100vw;
   height: 100vh;
   overflow: auto;
-  background: var(--color-background, #E3E7ED);
+  background: #F8FAFC;
   padding: 0;
   z-index: 1;
 }
@@ -66,7 +66,7 @@
 
 .profile-btn:hover,
 .logout-btn:hover {
-  background: var(--color-primary, #804EEC);
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
   color: white;
   border-color: var(--color-primary, #804EEC);
   transform: translateY(-1px);

@@ -42,33 +42,16 @@ export default function ProjectDetails() {
     setViewerFile(att);
 
     try {
-      // Try to access the stored URL directly first
+      // Always try to use the stored Cloudinary URL directly first
       if (att.fichier_url) {
-        // For images, we can try to display them directly
-        if (att.file_type && att.file_type.startsWith('image/')) {
-          setViewerBlobUrl(att.fichier_url);
-          setViewerLoading(false);
-          return;
-        }
-        // For other files, try to fetch as blob for preview
-        const res = await fetch(att.fichier_url);
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          setViewerBlobUrl(url);
-          setViewerLoading(false);
-          return;
-        }
+        // Use the URL directly in the viewer (image or pdf/other)
+        setViewerBlobUrl(att.fichier_url);
+        setViewerLoading(false);
+        return;
       }
 
-      // Fallback: Fetch via server proxy to avoid CORS / 401 issues
-      const token = getToken();
-      const res = await fetch(`http://localhost:5000/api/attachments/id/${att.id}/stream`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error("Impossible de récupérer le fichier");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+      // Fallback: use backend-signed URL for edge cases
+      const url = await getSignedUrl(att.id);
       setViewerBlobUrl(url);
     } catch (err) {
       console.error("Erreur lors du fetch du fichier:", err);
@@ -105,30 +88,37 @@ export default function ProjectDetails() {
 
   const handleOpenInNewTab = async (att) => {
     try {
-      // Try to use stored URL directly first
+      // Always prefer the stored Cloudinary secure URL
       if (att.fichier_url) {
-        window.open(att.fichier_url, '_blank', 'noopener');
+        window.open(att.fichier_url, "_blank", "noopener");
         return;
       }
 
-      // Fallback: use signed URL from server
+      // Fallback: signed URL from backend
       const url = await getSignedUrl(att.id);
-      window.open(url, '_blank', 'noopener');
+      window.open(url, "_blank", "noopener");
     } catch (err) {
-      console.error('Erreur ouverture nouvel onglet:', err);
+      console.error("Erreur ouverture nouvel onglet:", err);
       setViewerError("Impossible d'ouvrir dans un nouvel onglet.");
     }
   };
 
   const handleDownload = async (att) => {
     try {
-      // Try to use stored URL directly first
+      // Build a download-friendly URL (Cloudinary supports fl_attachment)
+      const buildDownloadUrl = (url) => {
+        if (!url) return url;
+        const separator = url.includes("?") ? "&" : "?";
+        const filename = encodeURIComponent(att.fichier_name || "download");
+        return `${url}${separator}fl_attachment=${filename}`;
+      };
+
+      // If we have the stored URL, try to force download via fl_attachment
       if (att.fichier_url) {
-        // Create a temporary link and trigger download
-        const link = document.createElement('a');
-        link.href = att.fichier_url;
-        link.download = att.fichier_name || 'download';
-        link.target = '_blank';
+        const link = document.createElement("a");
+        link.href = buildDownloadUrl(att.fichier_url);
+        link.download = att.fichier_name || "download";
+        link.target = "_blank"; // still open if browser blocks download attr cross-origin
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -137,10 +127,16 @@ export default function ProjectDetails() {
 
       // Fallback: use signed URL from server
       const url = await getSignedUrl(att.id);
-      window.open(url, '_blank', 'noopener');
+      const link = document.createElement("a");
+      link.href = buildDownloadUrl(url);
+      link.download = att.fichier_name || "download";
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (err) {
-      console.error('Erreur téléchargement:', err);
-      setViewerError('Impossible de télécharger le fichier pour le moment.');
+      console.error("Erreur téléchargement:", err);
+      setViewerError("Impossible de télécharger le fichier pour le moment.");
     }
   };
 
@@ -176,6 +172,9 @@ export default function ProjectDetails() {
   const [manageLoading, setManageLoading] = useState(false);
   const [manageError, setManageError] = useState("");
   const [manageMessage, setManageMessage] = useState("");
+  // Search/filter for available students in the "Gérer les étudiants" modal
+  const [searchAvailableStudents, setSearchAvailableStudents] = useState("");
+  const filteredAvailableStudents = classStudents.filter((s) => ((s.prenom||"") + " " + (s.nom||"") + " " + (s.email||"")).toLowerCase().includes(searchAvailableStudents.toLowerCase()));
 
   const navigate = useNavigate();
 
@@ -824,9 +823,6 @@ export default function ProjectDetails() {
       <div className="project-details-container">
         <div className="project-details-error">
           <p>{error || "Projet introuvable"}</p>
-          <button onClick={handleBack} className="back-btn">
-            Retour
-          </button>
         </div>
       </div>
     );
@@ -836,9 +832,6 @@ export default function ProjectDetails() {
     <div className="project-details-container">
       <div className="project-details-content">
         <div className="project-details-header">
-          <button onClick={handleBack} className="back-btn">
-            ← Retour
-          </button>
           <div className="header-title-section">
             <h1>{project.libelle}</h1>
             <p className="project-matiere-header">{project.matiere}</p>
@@ -1266,91 +1259,121 @@ export default function ProjectDetails() {
       {/* Task details modal */}
       {showTaskDetailsModal && detailTask && (
         <div className="modal-overlay" onClick={closeTaskDetails}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content large task-details-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Détails de la tâche</h2>
-              <button onClick={closeTaskDetails} className="modal-close-btn">×</button>
+              <div className="task-header-meta">
+                <h2>{detailTask.libelle}</h2>
+                <div className="task-header-sub">
+                  <span className="task-header-deadline">📅 {formatDate(detailTask.deadline)}</span>
+                  <span className="task-header-assignee">👥 {detailTask.etudiant_id ? `${detailTask.etudiant_prenom} ${detailTask.etudiant_nom}` : 'Tous les membres'}</span>
+                </div>
+              </div>
+
+              <div className="modal-header-actions">
+                {detailTaskAttachments.length > 0 && (
+                  <button
+                    type="button"
+                    className="download-all-btn"
+                    onClick={() => detailTaskAttachments.forEach((att) => handleDownload(att))}
+                    title="Télécharger toutes les pièces jointes"
+                  >
+                    ⬇️ Télécharger tout
+                  </button>
+                )}
+
+                <button onClick={closeTaskDetails} className="modal-close-btn">×</button>
+              </div>
             </div>
 
             {detailLoading && <div className="viewer-loading">Chargement...</div>}
             {detailError && <div className="error-message">{detailError}</div>}
 
             <div className="task-detail-body">
-              <h3>{detailTask.libelle}</h3>
-              {detailTask.description && <p className="task-description">{detailTask.description}</p>}
+              <div className="task-detail-grid">
+                <div className="task-detail-left">
+                  <h3>{detailTask.libelle}</h3>
+                  {detailTask.description && <p className="task-description">{detailTask.description}</p>}
 
-              <div className="task-info-row">
-                <span className="task-label">Date limite:</span>
-                <span className="task-value">{formatDate(detailTask.deadline)}</span>
-              </div>
+                  <div className="task-meta">
+                    <div className="task-info-row">
+                      <span className="task-label">Date limite:</span>
+                      <span className="task-value">{formatDate(detailTask.deadline)}</span>
+                    </div>
 
-              <div className="task-info-row">
-                <span className="task-label">Assignée à:</span>
-                <span className="task-value">{detailTask.etudiant_id ? `${detailTask.etudiant_prenom} ${detailTask.etudiant_nom}` : 'Tous les membres du projet'}</span>
-              </div>
-
-              <div className="attachments-section">
-                <h4>Fichiers liés</h4>
-                {detailTaskAttachments.length === 0 ? (
-                  <p className="text-muted">Aucun fichier associé à cette tâche.</p>
-                ) : (
-                  <div className="attachments-list">
-                    {detailTaskAttachments.map((att) => (
-                      <div key={att.id} className="attachment-item">
-                        <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(att); }} className="document-link attachment-open-btn">
-                          {att.file_type?.startsWith('image/') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'} {att.fichier_name}
-                        </button>
-                        <div className="attachment-actions">
-                          <button onClick={(e) => { e.stopPropagation(); handleDownload(att); }} className="download-btn">⬇️</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id); }} className="remove-attachment-btn">×</button>
-                        </div>
-                      </div>
-                    ))}
+                    <div className="task-info-row">
+                      <span className="task-label">Assignée à:</span>
+                      <span className="task-value">{detailTask.etudiant_id ? `${detailTask.etudiant_prenom} ${detailTask.etudiant_nom}` : 'Tous les membres du projet'}</span>
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <div className="students-submissions">
-                <h4>Livrables des étudiants</h4>
-                <p className="text-muted">(Montre les fichiers associés à la tâche — si les étudiants ont téléversé des rendus, ils apparaîtront ici)</p>
-                <div className="students-list">
-                  {students.length === 0 ? <p>Aucun étudiant assigné.</p> : (
-                    (() => {
-                      const studentsToShow = detailTask?.etudiant_id
-                        ? students.filter((s) => s.id === detailTask.etudiant_id)
-                        : students;
-
-                      if (studentsToShow.length === 0 && detailTask?.etudiant_id) {
-                        return <p className="text-muted">Étudiant assigné (ID: {detailTask.etudiant_id}) — détails non disponibles.</p>;
-                      }
-
-                      return studentsToShow.map((s) => {
-                        // Simple heuristic: check filenames for student email or name
-                        const matches = detailTaskAttachments.filter(a => {
-                          const lower = (a.fichier_name || '').toLowerCase();
-                          return (s.email && lower.includes(s.email.toLowerCase())) || (s.nom && lower.includes(s.nom.toLowerCase())) || (s.prenom && lower.includes(s.prenom.toLowerCase()));
-                        });
-                        return (
-                          <div key={s.id} className="student-submission-item">
-                            <strong>{s.prenom} {s.nom}</strong>
-                            {matches.length === 0 ? <span className="text-muted"> — Aucun rendu trouvé</span> : (
-                              <div className="student-attachments">
-                                {matches.map(m => (
-                                  <div key={m.id} className="attachment-item small">
-                                    <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(m); }} className="document-link attachment-open-btn">
-                                      {m.file_type?.startsWith('image/') ? '🖼️' : m.file_type?.includes('pdf') ? '📄' : '📎'} {m.fichier_name}
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); handleDownload(m); }} className="download-btn">⬇️</button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                  <div className="attachments-section">
+                    <h4>Fichiers liés</h4>
+                    {detailTaskAttachments.length === 0 ? (
+                      <p className="text-muted">Aucun fichier associé à cette tâche.</p>
+                    ) : (
+                      <div className="attachments-list">
+                        {detailTaskAttachments.map((att) => (
+                          <div key={att.id} className="attachment-item">
+                            <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(att); }} className="document-link attachment-open-btn">
+                              {att.file_type?.startsWith('image/') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'} {att.fichier_name}
+                            </button>
+                            <div className="attachment-actions">
+                              <button onClick={(e) => { e.stopPropagation(); handleDownload(att); }} className="download-btn">⬇️</button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteAttachment(att.id); }} className="remove-attachment-btn">×</button>
+                            </div>
                           </div>
-                        );
-                      });
-                    })()
-                  )}
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                <aside className="task-detail-right">
+                  <div className="students-submissions">
+                    <h4>Livrables des étudiants</h4>
+                    <p className="text-muted">(Montre les fichiers associés à la tâche — si les étudiants ont téléversé des rendus, ils apparaîtront ici)</p>
+                    <div className="students-list students-list-submissions">
+                      {students.length === 0 ? <p>Aucun étudiant assigné.</p> : (
+                        (() => {
+                          const studentsToShow = detailTask?.etudiant_id
+                            ? students.filter((s) => s.id === detailTask.etudiant_id)
+                            : students;
+
+                          if (studentsToShow.length === 0 && detailTask?.etudiant_id) {
+                            return <p className="text-muted">Étudiant assigné (ID: {detailTask.etudiant_id}) — détails non disponibles.</p>;
+                          }
+
+                          return studentsToShow.map((s) => {
+                            const matches = detailTaskAttachments.filter(a => {
+                              const lower = (a.fichier_name || '').toLowerCase();
+                              return (s.email && lower.includes(s.email.toLowerCase())) || (s.nom && lower.includes(s.nom.toLowerCase())) || (s.prenom && lower.includes(s.prenom.toLowerCase()));
+                            });
+                            return (
+                              <div key={s.id} className="student-submission-item">
+                                <div className="student-submission-row">
+                                  <strong>{s.prenom} {s.nom}</strong>
+                                  {matches.length === 0 ? <span className="text-muted"> — Aucun rendu trouvé</span> : null}
+                                </div>
+                                {matches.length > 0 && (
+                                  <div className="student-attachments">
+                                    {matches.map(m => (
+                                      <div key={m.id} className="attachment-item small">
+                                        <button onClick={(e) => { e.preventDefault(); openAttachmentViewer(m); }} className="document-link attachment-open-btn">
+                                          {m.file_type?.startsWith('image/') ? '🖼️' : m.file_type?.includes('pdf') ? '📄' : '📎'} {m.fichier_name}
+                                        </button>
+                                        <button onClick={(e) => { e.stopPropagation(); handleDownload(m); }} className="download-btn">⬇️</button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()
+                      )}
+                    </div>
+                  </div>
+                </aside>
               </div>
             </div>
           </div>
@@ -1546,15 +1569,33 @@ export default function ProjectDetails() {
 
               <div className="available-students">
                 <h3>Ajouter des étudiants ({classStudents.length})</h3>
-                {classStudents.length === 0 ? <p>Tous les étudiants de la classe sont déjà assignés.</p> : (
+                {classStudents.length === 0 ? (
+                  <p>Tous les étudiants de la classe sont déjà assignés.</p>
+                ) : (
                   <form onSubmit={(e) => { e.preventDefault(); handleAssignStudents(); }}>
-                    <div className="students-list">
-                      {classStudents.map((cs) => (
-                        <label key={cs.id} className="student-checkbox">
-                          <input type="checkbox" value={cs.id} checked={selectedStudents.includes(cs.id)} onChange={() => toggleSelectStudent(cs.id)} />
-                          {cs.prenom} {cs.nom} - {cs.email}
-                        </label>
-                      ))}
+                    <div className="student-search">
+                      <input
+                        type="search"
+                        className="student-search-input"
+                        placeholder="Rechercher un étudiant (nom, email...)"
+                        value={searchAvailableStudents}
+                        onChange={(e) => setSearchAvailableStudents(e.target.value)}
+                        aria-label="Rechercher des étudiants"
+                      />
+                    </div>
+
+                    <div className="students-list students-list-available">
+                      {filteredAvailableStudents.length === 0 ? (
+                        <p className="text-muted">Aucun étudiant correspondant.</p>
+                      ) : (
+                        filteredAvailableStudents.map((cs) => (
+                          <label key={cs.id} className="student-checkbox">
+                            <input type="checkbox" value={cs.id} checked={selectedStudents.includes(cs.id)} onChange={() => toggleSelectStudent(cs.id)} />
+                            <span className="student-name">{cs.prenom} {cs.nom}</span>
+                            <span className="student-email">{cs.email}</span>
+                          </label>
+                        ))
+                      )}
                     </div>
 
                     <div className="modal-actions">
@@ -1563,7 +1604,7 @@ export default function ProjectDetails() {
                     </div>
                   </form>
                 )}
-              </div>
+              </div> 
             </div>
           </div>
         </div>

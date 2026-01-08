@@ -295,3 +295,50 @@ export const getTeacherStudentsCount = async (req, res) => {
   }
 };
 
+// Récupérer les statistiques des tâches pour un enseignant
+export const getTasksStats = async (req, res) => {
+  try {
+    const teacherId = req.userId;
+
+    // Vérifier que l'utilisateur est un enseignant
+    const [users] = await db.query("SELECT role FROM users WHERE id = ?", [teacherId]);
+    if (users.length === 0 || users[0].role !== "enseignant") {
+      return res.status(403).json({ message: "Accès refusé. Réservé aux enseignants." });
+    }
+
+    // Compter les tâches en cours : tâches assignées (avec etudiant_id) mais sans soumission
+    const [inProgressResult] = await db.query(
+      `SELECT COUNT(*) as count
+       FROM taches t
+       INNER JOIN projets p ON t.projet_id = p.id
+       WHERE p.enseignant_id = ?
+         AND t.etudiant_id IS NOT NULL
+         AND t.id NOT IN (
+           SELECT st.tache_id FROM soumissions_taches st
+         )`,
+      [teacherId]
+    );
+
+    // Compter les tâches terminées : tâches assignées avec une soumission (livrable rendu)
+    const [completedResult] = await db.query(
+      `SELECT COUNT(*) as count
+       FROM taches t
+       INNER JOIN projets p ON t.projet_id = p.id
+       WHERE p.enseignant_id = ?
+         AND t.etudiant_id IS NOT NULL
+         AND t.id IN (
+           SELECT st.tache_id FROM soumissions_taches st
+         )`,
+      [teacherId]
+    );
+
+    const inProgress = inProgressResult[0]?.count || 0;
+    const completed = completedResult[0]?.count || 0;
+
+    res.status(200).json({ inProgress, completed });
+  } catch (error) {
+    console.error("❌ Erreur lors de la récupération des statistiques des tâches :", error);
+    res.status(500).json({ message: "Erreur serveur lors de la récupération des statistiques." });
+  }
+};
+

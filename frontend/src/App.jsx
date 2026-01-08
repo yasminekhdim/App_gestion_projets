@@ -1,10 +1,11 @@
-import { BrowserRouter, Routes, Route , Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import CompleteProfile from './pages/complete-profile'
 import ProfilePending from './pages/profilePending'
+import EnseignantLayout from './pages/enseignant/EnseignantLayout'
 import Homensg from './pages/enseignant/Homensg'
 import Students from './pages/enseignant/Students'
 import CreateProject from './pages/enseignant/CreateProject'
@@ -32,74 +33,48 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/resetPassword/:token" element={<ResetPassword />} />
-        <Route 
-          path="/complete-profile" 
+        <Route
+          path="/complete-profile"
           element={
             <ProtectedRoute allowedRoles={["administrateur", "enseignant", "etudiant"]}>
               <CompleteProfile />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/profilePending" 
+        <Route
+          path="/profilePending"
           element={
             <ProtectedRoute allowedRoles={["administrateur", "enseignant", "etudiant"]}>
               <ProfilePending />
             </ProtectedRoute>
-          } 
+          }
         />
         <Route path="/admin" element={
-        <ProtectedRoute allowedRoles={["administrateur"]}>
+          <ProtectedRoute allowedRoles={["administrateur"]}>
             <AdminLayout />
           </ProtectedRoute>
         }>
           <Route index element={<Dashboard />} />           {/* /admin */}
           <Route path="validation" element={<AdminValidation />} /> {/* /admin/validation */}
-          <Route path="users" element={<AdminUsers />} /> 
+          <Route path="users" element={<AdminUsers />} />
           <Route path="profile" element={<AdminProfile />} />
           {/* Add other admin subpages here */}
         </Route>
         <Route
-          path="/enseignant/home"
+          path="/enseignant"
           element={
             <ProtectedRoute allowedRoles={["enseignant"]}>
-              <Homensg />
+              <EnseignantLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/enseignant/students"
-          element={
-            <ProtectedRoute allowedRoles={["enseignant"]}>
-              <Students />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/enseignant/projects/create"
-          element={
-            <ProtectedRoute allowedRoles={["enseignant"]}>
-              <CreateProject />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/enseignant/projects"
-          element={
-            <ProtectedRoute allowedRoles={["enseignant"]}>
-              <ProjectsList />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/enseignant/projects/:projectId"
-          element={
-            <ProtectedRoute allowedRoles={["enseignant"]}>
-              <ProjectDetails />
-            </ProtectedRoute>
-          }
-        />
-        
+        >
+          <Route path="home" element={<Homensg />} />
+          <Route path="students" element={<Students />} />
+          <Route path="projects/create" element={<CreateProject />} />
+          <Route path="projects" element={<ProjectsList />} />
+          <Route path="projects/:projectId" element={<ProjectDetails />} />
+        </Route>
+
         <Route
           path="/etudiant/home"
           element={
@@ -118,7 +93,7 @@ function App() {
         />
       </Routes>
     </BrowserRouter>
-      
+
   )
 }
 

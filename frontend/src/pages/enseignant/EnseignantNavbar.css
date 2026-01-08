@@ -1,0 +1,266 @@
+/* ============================================
+   ENSEIGNANT NAVBAR - MAJOR REDESIGN
+   ============================================ */
+
+.enseignant-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+  box-shadow: 0 4px 30px rgba(109, 93, 246, 0.15);
+  border-bottom: 2px solid rgba(109, 93, 246, 0.1);
+  padding: 0.75rem 2.5rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  backdrop-filter: blur(20px);
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enseignant-navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.enseignant-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enseignant-navbar-brand:hover {
+  transform: translateX(-3px);
+}
+
+.enseignant-navbar-logo {
+  height: 45px;
+  width: auto;
+  border-radius: 12px;
+  padding: 4px;
+  background: linear-gradient(135deg, rgba(109, 93, 246, 0.1) 0%, rgba(76, 184, 196, 0.1) 100%);
+  border: 2px solid rgba(109, 93, 246, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.enseignant-navbar-brand:hover .enseignant-navbar-logo {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 25px rgba(109, 93, 246, 0.3);
+}
+
+.enseignant-navbar-brand-text {
+  font-weight: 800;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.enseignant-navbar-nav {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.enseignant-nav-item {
+  margin: 0;
+}
+
+.enseignant-nav-link {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #697483;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: block;
+}
+
+.enseignant-nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 80%;
+  height: 3px;
+  background: linear-gradient(90deg, #6D5DF6 0%, #4CB8C4 100%);
+  border-radius: 2px;
+  transition: transform 0.3s ease;
+}
+
+.enseignant-nav-link:hover {
+  background: linear-gradient(135deg, rgba(109, 93, 246, 0.1) 0%, rgba(76, 184, 196, 0.1) 100%);
+  color: #6D5DF6;
+  transform: translateY(-2px);
+}
+
+.enseignant-nav-link:hover::before {
+  transform: translateX(-50%) scaleX(1);
+}
+
+.enseignant-nav-link.active {
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(109, 93, 246, 0.4);
+}
+
+.enseignant-nav-link.active::before {
+  display: none;
+}
+
+.enseignant-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.enseignant-user-info {
+  text-align: right;
+}
+
+.enseignant-user-name {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.95rem;
+}
+
+.enseignant-user-role {
+  color: #697483;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.enseignant-profile-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.enseignant-profile-link:hover {
+  transform: scale(1.1);
+}
+
+.enseignant-profile-pic {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #6D5DF6;
+  box-shadow: 0 4px 15px rgba(109, 93, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.enseignant-profile-link:hover .enseignant-profile-pic {
+  border-color: #4CB8C4;
+  box-shadow: 0 6px 20px rgba(109, 93, 246, 0.4);
+}
+
+.enseignant-profile-placeholder {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 3px solid #6D5DF6;
+  box-shadow: 0 4px 15px rgba(109, 93, 246, 0.3);
+}
+
+.enseignant-logout-btn {
+  background: transparent;
+  color: #6D5DF6;
+  border: 2px solid #E5E7EB;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.enseignant-logout-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%);
+  transition: left 0.4s ease;
+  z-index: 0;
+}
+
+.enseignant-logout-btn:hover::before {
+  left: 0;
+}
+
+.enseignant-logout-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.enseignant-logout-btn:hover {
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(109, 93, 246, 0.35);
+}
+
+@media (max-width: 768px) {
+  .enseignant-navbar {
+    padding: 1rem 1.5rem;
+  }
+
+  .enseignant-navbar-container {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .enseignant-navbar-nav {
+    order: 3;
+    width: 100%;
+    justify-content: space-around;
+    gap: 0.25rem;
+  }
+
+  .enseignant-nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .enseignant-user-info {
+    display: none;
+  }
+}
+

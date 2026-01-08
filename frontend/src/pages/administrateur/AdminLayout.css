@@ -6,7 +6,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--color-background, #E3E7ED);
+  background-color: #F8FAFC;
 }
 
 .admin-main {
@@ -47,6 +47,19 @@
   width: 100%;
   max-width: 100%;
   padding: 0;
+  /* Space under top navbar so content doesn't sit flush */
+  padding-top: 1.25rem;
+  margin-top: 0.25rem;
+}
+
+/* Slightly larger top spacing on medium+ screens */
+@media (min-width: 768px) {
+  .admin-main .dashboard,
+  .admin-main .validation-container,
+  .admin-main .users-container {
+    padding-top: 2rem;
+    margin-top: 0.5rem;
+  }
 }
 
 .admin-main h3 {
@@ -72,7 +85,7 @@
 }
 
 .admin-main .badge.bg-primary {
-  background-color: var(--color-primary, #804EEC) !important;
+  background: linear-gradient(135deg, #6D5DF6 0%, #4CB8C4 100%) !important;
   color: white;
 }
 

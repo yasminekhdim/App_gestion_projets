@@ -50,11 +50,10 @@ export default function AdminNavbar() {
             <li className="nav-item" key={item.path}>
               <Link
                 to={item.path}
-                className={`nav-link px-3 rounded fw-medium ${
-                  location.pathname === item.path
+                className={`nav-link px-3 rounded fw-medium ${location.pathname === item.path
                     ? "active bg-primary text-white"
                     : "text-dark"
-                }`}
+                  }`}
               >
                 {item.name}
               </Link>
@@ -72,18 +71,18 @@ export default function AdminNavbar() {
             <small className="text-muted">Administrateur</small>
           </div>
           <Link to="/admin/profile">
-          {!imgError ? (
-            <img
-              src={user?.profilePic_url || "/profile.png"}
-              alt="profile"
-              width="40"
-              height="40"
-              className="rounded-circle border border-primary"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <i className="fas fa-user-circle fs-3 text-primary"></i>
-          )}
+            {!imgError ? (
+              <img
+                src={user?.profilePic_url || "/profile.png"}
+                alt="profile"
+                width="40"
+                height="40"
+                className="rounded-circle border border-primary"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <i className="fas fa-user-circle fs-3 text-primary"></i>
+            )}
           </Link>
           <button
             className="btn btn-outline-primary btn-sm px-3"

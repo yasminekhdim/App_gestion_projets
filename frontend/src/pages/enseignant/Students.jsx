@@ -103,7 +103,6 @@ export default function Students() {
     <div className="students-container">
       <div className="students-content">
         <div className="students-header">
-          <button onClick={handleBack} className="back-btn">← Retour</button>
           <div>
             <h1>Mes Étudiants</h1>
             {teacherClasses.length === 0 ? (

@@ -1,0 +1,12 @@
+.enseignant-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.enseignant-layout-content {
+  flex: 1;
+  width: 100%;
+  padding-top: 100px; /* Account for navbar height */
+}
+

@@ -220,9 +220,20 @@ export const getTeacherProjects = async (req, res) => {
       return res.status(403).json({ message: "Accès refusé. Réservé aux enseignants." });
     }
 
-    // Récupérer tous les projets de l'enseignant avec les informations de la classe
-    const [projects] = await db.query(
-      `SELECT 
+    // Paramètres de requête pour pagination et tri
+    const limit = req.query.limit ? parseInt(req.query.limit) : null;
+    const sort = req.query.sort || 'created_at';
+    const order = req.query.order === 'asc' ? 'ASC' : 'DESC';
+
+    // Validation des paramètres
+    const allowedSortFields = ['created_at', 'libelle', 'deadline'];
+    if (!allowedSortFields.includes(sort)) {
+      return res.status(400).json({ message: "Champ de tri invalide." });
+    }
+
+    // Construction de la requête SQL
+    let sql = `
+      SELECT
         p.id,
         p.libelle,
         p.matiere,
@@ -236,9 +247,18 @@ export const getTeacherProjects = async (req, res) => {
       FROM projets p
       INNER JOIN classes c ON p.classe_id = c.id
       WHERE p.enseignant_id = ?
-      ORDER BY p.created_at DESC`,
-      [teacherId]
-    );
+      ORDER BY p.${sort} ${order}
+    `;
+
+    const params = [teacherId];
+
+    // Ajouter LIMIT si spécifié
+    if (limit && limit > 0) {
+      sql += " LIMIT ?";
+      params.push(limit);
+    }
+
+    const [projects] = await db.query(sql, params);
 
     res.status(200).json({ projects });
   } catch (error) {

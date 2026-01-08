@@ -6,6 +6,7 @@ import {
   unassignClass,
   getTeacherStudents,
   getTeacherStudentsCount,
+  getTasksStats,
 } from "../controllers/teacherController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
@@ -31,6 +32,9 @@ router.get("/students", getTeacherStudents);
 
 // Route pour récupérer le nombre total d'étudiants
 router.get("/students/count", getTeacherStudentsCount);
+
+// Route pour récupérer les statistiques des tâches
+router.get("/tasks/stats", getTasksStats);
 
 export default router;
 

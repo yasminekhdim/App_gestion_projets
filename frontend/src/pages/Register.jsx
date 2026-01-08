@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Register.css";
 import backgroundImage from "../assets/image.png";
+import logo from "../assets/logo.png";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -126,12 +127,7 @@ export default function Register() {
       <div className="register-card">
         <div className="register-inner">
           <div className="register-hero">
-            <div className="hero-icon" aria-hidden>
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" stroke="#fff" strokeWidth="1.2"/>
-                <path d="M2 22c0-3.866 3.582-7 10-7s10 3.134 10 7" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+            <img src={logo} alt="Logo" className="register-logo" />
             <h2>Bienvenue</h2>
             <p className="register-question">Créez un compte étudiant ou enseignant — prenez votre temps.</p>
             <p className="hero-note">Choisissez votre département et votre classe (si étudiant). Votre preuve d'identité est requise.</p>
@@ -218,9 +214,13 @@ export default function Register() {
                 <div className="field actions full">
                   <div className="actions-row">
                     <button type="button" className="cancel-btn" onClick={() => setFormData({ nom: "", prenom: "", email: "", password: "", confirmPassword: "", dateNaissance: "", cin: "", role: "etudiant", departement: "", classe: "" })}>Annuler</button>
-                    <button type="submit" className="sign-up-button">S'INSCRIRE</button>
+                    <button type="submit" className="sign-up-button" aria-live="polite">S'INSCRIRE</button>
                   </div>
-                  {message && <p className="message">{message}</p>}
+                  {message && (
+                    <p className={`message ${message.startsWith('❌') ? 'error' : message.startsWith('✅') ? 'success' : ''}`} role="alert" aria-live="polite">
+                      {message}
+                    </p>
+                  )}
                 </div>
 
               </div>
